@@ -9,26 +9,13 @@ function updateDocNumber() {
     document.getElementById('pRef').innerText = "REF: " + finalRef;
 }
 
-function switchView(view, btn) {
-    const editor = document.getElementById('editor-view');
-    const settings = document.getElementById('settings-view');
-    if (view === 'settings') {
-        editor.classList.add('hidden');
-        settings.classList.remove('hidden');
-    } else {
-        settings.classList.add('hidden');
-        editor.classList.remove('hidden');
-    }
-    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-    if(btn) btn.classList.add('active');
-}
-
 function setDoc(type, btn) {
     curDocType = type;
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    if(btn) btn.classList.add('active');
     document.getElementById('pType').innerText = type.toUpperCase();
     document.getElementById('editTitle').innerText = type;
     updateDocNumber();
-    if(btn) switchView('editor', btn);
     if(window.innerWidth < 1024) toggleMenu();
     sync();
 }
@@ -104,7 +91,7 @@ function sync() {
         const p = parseFloat(r.querySelector('.i-price').value) || 0;
         const total = q * p;
         sub += total;
-        if(d) tableBody.innerHTML += `<tr><td class="py-4 px-6 uppercase">${d}</td><td class="text-center">${q}</td><td class="text-right">${p.toLocaleString()}</td><td class="text-right font-black">${total.toLocaleString()}</td></tr>`;
+        if(d) tableBody.innerHTML += `<tr><td class="py-4 px-6 uppercase">${d}</td><td class="text-center">${q}</td><td class="text-right">ZMW ${p.toLocaleString()}</td><td class="text-right font-black">ZMW ${total.toLocaleString()}</td></tr>`;
     });
 
     const vat = sub * taxRate;
@@ -117,16 +104,20 @@ function finalSave() {
     const el = document.getElementById('pdfArea');
     const oldTransform = el.style.transform;
     el.style.transform = 'scale(1)'; 
-    
+    el.style.height = '296mm'; // Strict page clipping
+
     html2pdf().from(el).set({ 
         margin: 0, 
-        filename: `Victus_${curDocType}_${Date.now()}.pdf`, 
+        filename: `Victus_${curDocType}.pdf`, 
         html2canvas: { scale: 3, useCORS: true }, 
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } 
     }).toPdf().get('pdf').then(pdf => {
         const pages = pdf.internal.getNumberOfPages();
         for (let i = pages; i > 1; i--) { pdf.deletePage(i); }
-    }).save().then(() => el.style.transform = oldTransform);
+    }).save().then(() => {
+        el.style.transform = oldTransform;
+        el.style.height = 'auto';
+    });
 }
 
 function toggleMenu() {
