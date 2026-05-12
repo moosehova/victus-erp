@@ -17,7 +17,7 @@ function switchView(view, btn) {
     }
 }
 
-// HANDLE E-SIGNATURE (Moved to Settings logic basically)
+// HANDLE E-SIGNATURE (Global for Lungowe Lutangu)
 function handleSignature(event) {
     const reader = new FileReader();
     const sigImg = document.getElementById('pSignature');
@@ -26,7 +26,7 @@ function handleSignature(event) {
         sigImg.src = base64;
         sigImg.classList.remove('hidden');
         localStorage.setItem('victus_signature', base64);
-    }
+    };
     if(event.target.files[0]) reader.readAsDataURL(event.target.files[0]);
 }
 
@@ -55,28 +55,32 @@ function applySettings() {
 
     if (saved) {
         const config = JSON.parse(saved);
-        document.getElementById('set-tpin').value = config.tpin;
-        document.getElementById('set-tax').value = config.tax;
-        document.getElementById('set-bank').value = config.bank;
-        document.getElementById('set-account').value = config.account;
+        document.getElementById('set-tpin').value = config.tpin || "1002345678";
+        document.getElementById('set-tax').value = config.tax || "16";
+        document.getElementById('set-bank').value = config.bank || "FNB Zambia";
+        document.getElementById('set-account').value = config.account || "62908272910";
 
-        taxRate = parseFloat(config.tax) / 100;
-        document.getElementById('pVatRate').innerText = config.tax;
+        taxRate = (parseFloat(config.tax) || 16) / 100;
+        document.getElementById('pVatRate').innerText = config.tax || "16.0";
         document.getElementById('pHeaderDetails').innerHTML = `TPIN: ${config.tpin} <br> #256, 2341/M/1 Musikili Road, Lusaka`;
         document.getElementById('pFooterInfo').innerText = `Bank Details: ${config.bank} | Account: ${config.account} | TPIN: ${config.tpin}`;
     }
     sync();
 }
 
+// MOBILE MENU & UI
 function toggleMenu() {
-    document.getElementById('sidebar').classList.toggle('open');
-    document.getElementById('overlay').classList.toggle('open');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('overlay');
+    sidebar.classList.toggle('open');
+    overlay.classList.toggle('open');
 }
 
 function setDoc(type, btn) {
     curDocType = type;
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
+    if(btn) btn.classList.add('active');
+    
     document.getElementById('editTitle').innerText = type;
     document.getElementById('pType').innerText = type;
     
@@ -87,6 +91,7 @@ function setDoc(type, btn) {
     const prefix = type === 'Quotation' ? 'QT' : type === 'Delivery Note' ? 'DN' : 'INV';
     document.getElementById('docNum').value = `VEL-${prefix}-${currentRefNumber}`;
     
+    // Close menu on mobile after selection
     if(window.innerWidth < 1024) toggleMenu();
     sync();
 }
@@ -128,7 +133,7 @@ function sync() {
         const p = parseFloat(r.querySelector('.i-price').value) || 0;
         const total = q * p;
         sub += total;
-        if(d) tableBody.innerHTML += `<tr><td class="py-5 px-6 uppercase text-slate-800 tracking-tight"><b>${d}</b><br><span class="text-[9px] text-slate-400 font-mono">CODE: ${c}</span></td><td class="py-5 px-6 text-center font-bold text-slate-600">${q}</td><td class="py-5 px-6 text-right text-slate-500">ZMW ${p.toLocaleString()}</td><td class="py-5 px-6 text-right font-black text-slate-900 font-bold">ZMW ${total.toLocaleString()}</td></tr>`;
+        if(d) tableBody.innerHTML += `<tr><td class="py-5 px-6 uppercase text-slate-800"><b>${d}</b><br><span class="text-[9px] text-slate-400 font-mono">CODE: ${c}</span></td><td class="py-5 px-6 text-center font-bold text-slate-600">${q}</td><td class="py-5 px-6 text-right text-slate-500">ZMW ${p.toLocaleString()}</td><td class="py-5 px-6 text-right font-black text-slate-900">ZMW ${total.toLocaleString()}</td></tr>`;
     });
 
     const vat = sub * taxRate;
@@ -141,11 +146,17 @@ function finalSave() {
     const el = document.getElementById('pdfArea');
     const oldTransform = el.style.transform;
     el.style.transform = 'scale(1)';
-    html2pdf().from(el).set({ margin: 0, filename: `VICTUS_${curDocType}.pdf`, html2canvas: { scale: 3, useCORS: true }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } }).save().then(() => el.style.transform = oldTransform);
+    html2pdf().from(el).set({ 
+        margin: 0, 
+        filename: `VICTUS_${curDocType}.pdf`, 
+        html2canvas: { scale: 3, useCORS: true }, 
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } 
+    }).save().then(() => el.style.transform = oldTransform);
 }
 
-aasync function saveToNeon() {
+async function saveToNeon() {
     const btn = event.target;
+    const originalText = btn.innerText;
     btn.innerText = "Archiving...";
     btn.disabled = true;
 
@@ -168,26 +179,23 @@ aasync function saveToNeon() {
     });
 
     try {
-        // This path must match your file name in the api folder
         const response = await fetch('/api/save-to-neon', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
 
-        const result = await response.json();
-
         if (response.ok) {
-            alert("✅ Successfully Archived to Neon Database!");
+            alert("✅ Successfully Archived to Neon!");
             currentRefNumber++;
-            setDoc(curDocType, document.querySelector('.nav-btn.active'));
+            setDoc(curDocType);
         } else {
-            alert("❌ Database Error: " + result.error);
+            alert("❌ Database Error.");
         }
     } catch (err) {
-        alert("❌ Connection Failed. Make sure you are running on Vercel.");
+        alert("❌ Connection Failed.");
     } finally {
-        btn.innerText = "Archive to Neon";
+        btn.innerText = originalText;
         btn.disabled = false;
     }
 }
