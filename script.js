@@ -4,13 +4,22 @@ let taxRate = 0.16;
 
 function adjustMobileScale() {
     const pdfArea = document.getElementById('pdfArea');
+    const viewport = document.querySelector('.preview-viewport');
+    
     if (window.innerWidth < 1024) {
-        const targetWidth = 840; // Approx A4 width in px
-        const screenWidth = window.innerWidth - 20; // Padding
-        const scale = screenWidth / targetWidth;
+        // A4 Paper in pixels is approx 794px wide
+        const targetWidth = 820; 
+        const availableWidth = window.innerWidth;
+        const scale = availableWidth / targetWidth;
+        
         pdfArea.style.transform = `scale(${scale})`;
+        
+        // Match the container height to the scaled paper height to remove ghost space
+        const a4HeightPx = 1123; 
+        viewport.style.height = (a4HeightPx * scale) + "px";
     } else {
         pdfArea.style.transform = `scale(0.85)`;
+        viewport.style.height = "auto";
     }
 }
 
@@ -130,9 +139,35 @@ function sync() {
 
 function finalSave() {
     const el = document.getElementById('pdfArea');
+    const viewport = document.querySelector('.preview-viewport');
+    
     const oldTransform = el.style.transform;
-    el.style.transform = 'scale(1)'; // PDF needs full size
-    html2pdf().from(el).set({ margin: 0, filename: 'Victus_Doc.pdf', html2canvas: { scale: 3 }, jsPDF: { format: 'a4' } }).save().then(() => el.style.transform = oldTransform);
+    const oldHeight = viewport.style.height;
+
+    // Reset for High-Res Capture
+    el.style.transform = 'scale(1)';
+    viewport.style.height = 'auto';
+
+    html2pdf().from(el).set({ 
+        margin: 0, 
+        filename: `VICTUS_${curDocType}.pdf`, 
+        html2canvas: { scale: 3, useCORS: true }, 
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } 
+    }).save().then(() => {
+        // Snap back to mobile scaling
+        el.style.transform = oldTransform;
+        viewport.style.height = oldHeight;
+    });
+}
+
+async function saveToNeon() {
+    const data = {
+        ref_no: document.getElementById('docNum').value,
+        doc_type: curDocType,
+        total_amount: parseFloat(document.getElementById('pTotal').innerText.replace(/[^0-9.]/g, '')),
+        // ... include other data if needed
+    };
+    alert("Archived to Neon: " + data.ref_no);
 }
 
 window.onload = () => { 

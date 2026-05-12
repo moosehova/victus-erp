@@ -13,17 +13,17 @@
     main { display: block !important; overflow-y: auto !important; height: auto !important; }
     section { overflow: visible !important; border-right: none !important; }
     
-    /* MOBILE PREVIEW FIX */
     .preview-viewport { 
         width: 100%; 
         overflow: hidden; 
         display: flex; 
         justify-content: center; 
-        padding: 5px; 
-        background: #f8fafc; 
+        align-items: flex-start;
+        background: #f8fafc;
+        min-height: 100px; /* Calculated by JS */
     }
     #pdfArea { 
         transform-origin: top center; 
-        margin-bottom: -200px; /* Adjusts the gap left by scaling */
+        box-shadow: 0 0 40px rgba(0,0,0,0.1);
     }
 }
