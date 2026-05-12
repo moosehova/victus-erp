@@ -2,7 +2,18 @@ let curDocType = 'Quotation';
 let currentRefNumber = 1100;
 let taxRate = 0.16;
 
-// VIEW SWITCHER
+function adjustMobileScale() {
+    const pdfArea = document.getElementById('pdfArea');
+    if (window.innerWidth < 1024) {
+        const targetWidth = 840; // Approx A4 width in px
+        const screenWidth = window.innerWidth - 20; // Padding
+        const scale = screenWidth / targetWidth;
+        pdfArea.style.transform = `scale(${scale})`;
+    } else {
+        pdfArea.style.transform = `scale(0.85)`;
+    }
+}
+
 function switchView(view, btn) {
     const editor = document.getElementById('editor-view');
     const settings = document.getElementById('settings-view');
@@ -17,7 +28,6 @@ function switchView(view, btn) {
     }
 }
 
-// HANDLE E-SIGNATURE (Global for Lungowe Lutangu)
 function handleSignature(event) {
     const reader = new FileReader();
     const sigImg = document.getElementById('pSignature');
@@ -30,7 +40,6 @@ function handleSignature(event) {
     if(event.target.files[0]) reader.readAsDataURL(event.target.files[0]);
 }
 
-// SETTINGS PERSISTENCE
 function saveSettings() {
     const config = {
         tpin: document.getElementById('set-tpin').value,
@@ -40,77 +49,55 @@ function saveSettings() {
     };
     localStorage.setItem('victus_config', JSON.stringify(config));
     applySettings();
-    alert("ERP Configuration Saved.");
+    alert("Settings Saved.");
 }
 
 function applySettings() {
     const saved = localStorage.getItem('victus_config');
     const savedSig = localStorage.getItem('victus_signature');
-
     if (savedSig) {
-        const sigImg = document.getElementById('pSignature');
-        sigImg.src = savedSig;
-        sigImg.classList.remove('hidden');
+        document.getElementById('pSignature').src = savedSig;
+        document.getElementById('pSignature').classList.remove('hidden');
     }
-
     if (saved) {
         const config = JSON.parse(saved);
-        document.getElementById('set-tpin').value = config.tpin || "1002345678";
-        document.getElementById('set-tax').value = config.tax || "16";
-        document.getElementById('set-bank').value = config.bank || "FNB Zambia";
-        document.getElementById('set-account').value = config.account || "62908272910";
-
         taxRate = (parseFloat(config.tax) || 16) / 100;
-        document.getElementById('pVatRate').innerText = config.tax || "16.0";
-        document.getElementById('pHeaderDetails').innerHTML = `TPIN: ${config.tpin} <br> #256, 2341/M/1 Musikili Road, Lusaka`;
-        document.getElementById('pFooterInfo').innerText = `Bank Details: ${config.bank} | Account: ${config.account} | TPIN: ${config.tpin}`;
+        document.getElementById('pVatRate').innerText = config.tax;
+        document.getElementById('pHeaderDetails').innerHTML = `TPIN: ${config.tpin} <br> #256, 2341/M/1 MUSIKILI ROAD, LUSAKA`;
+        document.getElementById('pFooterInfo').innerText = `Bank: ${config.bank} | Account: ${config.account}`;
     }
     sync();
 }
 
-// MOBILE MENU & UI
 function toggleMenu() {
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('overlay');
-    sidebar.classList.toggle('open');
-    overlay.classList.toggle('open');
+    document.getElementById('sidebar').classList.toggle('open');
+    document.getElementById('overlay').classList.toggle('open');
 }
 
 function setDoc(type, btn) {
     curDocType = type;
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
     if(btn) btn.classList.add('active');
-    
     document.getElementById('editTitle').innerText = type;
     document.getElementById('pType').innerText = type;
-    
-    const isLPO = type === 'Local Purchase Order';
-    document.getElementById('partyLabel').innerText = isLPO ? 'Vendor Name' : 'Attention To';
-    document.getElementById('pLabel').innerText = isLPO ? 'Supplier Info' : 'Attention To';
-    
-    const prefix = type === 'Quotation' ? 'QT' : type === 'Delivery Note' ? 'DN' : 'INV';
+    const prefix = type === 'Quotation' ? 'QT' : 'INV';
     document.getElementById('docNum').value = `VEL-${prefix}-${currentRefNumber}`;
-    
-    // Close menu on mobile after selection
     if(window.innerWidth < 1024) toggleMenu();
     sync();
 }
 
 function addRow() {
-    const list = document.getElementById('itemList');
     const rowId = Date.now();
     const row = document.createElement('div');
-    row.className = "item-row p-4 bg-slate-50 rounded-xl border border-slate-200 mb-3 relative";
+    row.className = "item-row p-4 bg-slate-50 rounded-xl border mb-3 relative";
     row.id = `row-${rowId}`;
-    row.innerHTML = `
-        <button onclick="document.getElementById('row-${rowId}').remove(); sync()" class="absolute top-2 right-2 text-red-500 font-bold">×</button>
+    row.innerHTML = `<button onclick="document.getElementById('row-${rowId}').remove(); sync()" class="absolute top-2 right-2 text-red-500">×</button>
         <input type="text" oninput="sync()" placeholder="Description" class="input-box mb-2 i-desc">
         <div class="flex gap-2">
-            <input type="text" oninput="sync()" placeholder="Code" class="input-box i-code w-24">
             <input type="number" oninput="sync()" placeholder="Qty" class="input-box i-qty w-20" value="1">
             <input type="number" oninput="sync()" placeholder="Price" class="input-box i-price flex-1" value="0">
         </div>`;
-    list.appendChild(row);
+    document.getElementById('itemList').appendChild(row);
     sync();
 }
 
@@ -128,79 +115,29 @@ function sync() {
 
     rows.forEach(r => {
         const d = r.querySelector('.i-desc').value;
-        const c = r.querySelector('.i-code').value;
         const q = parseFloat(r.querySelector('.i-qty').value) || 0;
         const p = parseFloat(r.querySelector('.i-price').value) || 0;
         const total = q * p;
         sub += total;
-        if(d) tableBody.innerHTML += `<tr><td class="py-5 px-6 uppercase text-slate-800"><b>${d}</b><br><span class="text-[9px] text-slate-400 font-mono">CODE: ${c}</span></td><td class="py-5 px-6 text-center font-bold text-slate-600">${q}</td><td class="py-5 px-6 text-right text-slate-500">ZMW ${p.toLocaleString()}</td><td class="py-5 px-6 text-right font-black text-slate-900">ZMW ${total.toLocaleString()}</td></tr>`;
+        if(d) tableBody.innerHTML += `<tr><td class="py-4 px-6 uppercase">${d}</td><td class="text-center">${q}</td><td class="text-right">ZMW ${p.toLocaleString()}</td><td class="text-right font-black">ZMW ${total.toLocaleString()}</td></tr>`;
     });
 
     const vat = sub * taxRate;
-    document.getElementById('pSub').innerText = "ZMW " + sub.toLocaleString(undefined, {minimumFractionDigits: 2});
-    document.getElementById('pVat').innerText = "ZMW " + vat.toLocaleString(undefined, {minimumFractionDigits: 2});
-    document.getElementById('pTotal').innerText = "ZMW " + (sub + vat).toLocaleString(undefined, {minimumFractionDigits: 2});
+    document.getElementById('pSub').innerText = "ZMW " + sub.toLocaleString();
+    document.getElementById('pVat').innerText = "ZMW " + vat.toLocaleString();
+    document.getElementById('pTotal').innerText = "ZMW " + (sub + vat).toLocaleString();
 }
 
 function finalSave() {
     const el = document.getElementById('pdfArea');
     const oldTransform = el.style.transform;
-    el.style.transform = 'scale(1)';
-    html2pdf().from(el).set({ 
-        margin: 0, 
-        filename: `VICTUS_${curDocType}.pdf`, 
-        html2canvas: { scale: 3, useCORS: true }, 
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } 
-    }).save().then(() => el.style.transform = oldTransform);
-}
-
-async function saveToNeon() {
-    const btn = event.target;
-    const originalText = btn.innerText;
-    btn.innerText = "Archiving...";
-    btn.disabled = true;
-
-    const payload = {
-        ref_no: document.getElementById('docNum').value,
-        doc_type: curDocType,
-        client_name: document.getElementById('clientName').value,
-        address: document.getElementById('address').value,
-        representative: document.getElementById('salesRep').value,
-        total_amount: parseFloat(document.getElementById('pTotal').innerText.replace(/[^0-9.]/g, '')),
-        items: []
-    };
-
-    document.querySelectorAll('.item-row').forEach(row => {
-        payload.items.push({
-            desc: row.querySelector('.i-desc').value,
-            qty: row.querySelector('.i-qty').value,
-            price: row.querySelector('.i-price').value
-        });
-    });
-
-    try {
-        const response = await fetch('/api/save-to-neon', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-
-        if (response.ok) {
-            alert("✅ Successfully Archived to Neon!");
-            currentRefNumber++;
-            setDoc(curDocType);
-        } else {
-            alert("❌ Database Error.");
-        }
-    } catch (err) {
-        alert("❌ Connection Failed.");
-    } finally {
-        btn.innerText = originalText;
-        btn.disabled = false;
-    }
+    el.style.transform = 'scale(1)'; // PDF needs full size
+    html2pdf().from(el).set({ margin: 0, filename: 'Victus_Doc.pdf', html2canvas: { scale: 3 }, jsPDF: { format: 'a4' } }).save().then(() => el.style.transform = oldTransform);
 }
 
 window.onload = () => { 
     applySettings();
     addRow(); 
+    adjustMobileScale();
 };
+window.onresize = adjustMobileScale;
