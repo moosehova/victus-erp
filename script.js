@@ -9,13 +9,26 @@ function updateDocNumber() {
     document.getElementById('pRef').innerText = "REF: " + finalRef;
 }
 
-function setDoc(type, btn) {
-    curDocType = type;
+function switchView(view, btn) {
+    const editor = document.getElementById('editor-view');
+    const settings = document.getElementById('settings-view');
+    if (view === 'settings') {
+        editor.classList.add('hidden');
+        settings.classList.remove('hidden');
+    } else {
+        settings.classList.add('hidden');
+        editor.classList.remove('hidden');
+    }
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
     if(btn) btn.classList.add('active');
+}
+
+function setDoc(type, btn) {
+    curDocType = type;
     document.getElementById('pType').innerText = type.toUpperCase();
     document.getElementById('editTitle').innerText = type;
     updateDocNumber();
+    if(btn) switchView('editor', btn);
     if(window.innerWidth < 1024) toggleMenu();
     sync();
 }
@@ -53,7 +66,7 @@ function applySettings() {
     if (saved) {
         const config = JSON.parse(saved);
         taxRate = (parseFloat(config.tax) || 16) / 100;
-        document.getElementById('pVatRate').innerText = config.tax;
+        document.getElementById('pVatRate').innerText = config.tax || "16.0";
         document.getElementById('pHeaderDetails').innerHTML = `TPIN: ${config.tpin} <br> #256, 2341/M/1 MUSIKILI ROAD, LUSAKA, ZAMBIA`;
         document.getElementById('pFooterInfo').innerText = `Bank Details: ${config.bank} | Account: ${config.account}`;
     }
@@ -91,7 +104,7 @@ function sync() {
         const p = parseFloat(r.querySelector('.i-price').value) || 0;
         const total = q * p;
         sub += total;
-        if(d) tableBody.innerHTML += `<tr><td class="py-4 px-6 uppercase">${d}</td><td class="text-center">${q}</td><td class="text-right">ZMW ${p.toLocaleString()}</td><td class="text-right font-black">ZMW ${total.toLocaleString()}</td></tr>`;
+        if(d) tableBody.innerHTML += `<tr><td class="py-4 px-4 uppercase">${d}</td><td class="text-center font-bold text-slate-600">${q}</td><td class="text-right">ZMW ${p.toLocaleString()}</td><td class="text-right font-black">ZMW ${total.toLocaleString()}</td></tr>`;
     });
 
     const vat = sub * taxRate;
@@ -102,21 +115,28 @@ function sync() {
 
 function finalSave() {
     const el = document.getElementById('pdfArea');
-    const oldTransform = el.style.transform;
-    el.style.transform = 'scale(1)'; 
-    el.style.height = '296mm'; // Strict page clipping
+    const isMobile = window.innerWidth < 1024;
+    
+    // TEMPORARILY force A4 width for the PDF generator only
+    if(isMobile) {
+        el.style.width = '210mm';
+        el.style.padding = '64px';
+    }
 
     html2pdf().from(el).set({ 
         margin: 0, 
-        filename: `Victus_${curDocType}.pdf`, 
+        filename: `Victus_${curDocType}_${Date.now()}.pdf`, 
         html2canvas: { scale: 3, useCORS: true }, 
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } 
     }).toPdf().get('pdf').then(pdf => {
         const pages = pdf.internal.getNumberOfPages();
         for (let i = pages; i > 1; i--) { pdf.deletePage(i); }
     }).save().then(() => {
-        el.style.transform = oldTransform;
-        el.style.height = 'auto';
+        // Reset back to Phone View
+        if(isMobile) {
+            el.style.width = '100%';
+            el.style.padding = '24px';
+        }
     });
 }
 

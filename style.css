@@ -1,23 +1,33 @@
 #sidebar { transition: 0.4s ease; background: #0B1221; }
-.nav-btn { width: 100%; display: flex; align-items: center; gap: 1rem; padding: 1.25rem; border-radius: 1rem; color: #94a3b8; font-weight: 700; font-size: 0.875rem; transition: 0.3s; margin-bottom: 0.5rem; }
+.nav-btn { width: 100%; display: flex; align-items: center; gap: 1rem; padding: 1.25rem; border-radius: 1rem; color: #94a3b8; font-weight: 700; font-size: 0.875rem; transition: 0.3s; margin-bottom: 0.5rem; cursor: pointer; }
 .nav-btn.active { background: #2563eb; color: white; box-shadow: 0 10px 30px rgba(37,99,235,0.3); }
 .label { font-size: 10px; font-weight: 900; text-transform: uppercase; color: #94a3b8; margin-bottom: 0.5rem; display: block; }
-.input-box { width: 100%; background: #f8fafc; border: 1px solid #e2e8f0; padding: 0.875rem; border-radius: 0.75rem; font-size: 0.875rem; font-weight: 600; outline: none; }
+.input-box { width: 100%; background: #f8fafc; border: 1px solid #e2e8f0; padding: 0.875rem; border-radius: 0.75rem; font-weight: 600; outline: none; }
 
 #sidebar.open { transform: translateX(0); }
 .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 90; }
 .overlay.open { display: block; }
 
-@media (max-width: 1024px) {
+/* Desktop scaling */
+@media (min-width: 1024px) {
+    #pdfArea {
+        transform: scale(0.85);
+        transform-origin: top center;
+    }
+}
+
+/* FLUID PHONE FIT: No Scaling Hacks */
+@media (max-width: 1023px) {
     #sidebar { transform: translateX(-100%); position: fixed; inset: 0; width: 280px; z-index: 100; border-radius: 0; }
     main { display: block !important; overflow-y: auto !important; height: auto !important; }
-    section { overflow: visible !important; border-right: none !important; }
+    section { border-right: none !important; }
     
     #pdfArea { 
-        transform: scale(0.48); 
-        transform-origin: top left;
-        margin-left: 15px;
-        margin-top: 10px;
-        box-shadow: 0 0 40px rgba(0,0,0,0.1);
+        width: 100% !important; /* Forces document to fit your phone width */
+        min-height: auto !important;
+        padding: 24px !important; 
+        transform: none !important; 
+        margin: 0 !important;
+        box-shadow: none;
     }
 }
