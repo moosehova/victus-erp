@@ -1,4 +1,4 @@
-#sidebar { transition: 0.4s ease; background: #0B1221; }
+#sidebar { transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); background: #0B1221; }
 .nav-btn { width: 100%; display: flex; align-items: center; gap: 1rem; padding: 1.25rem; border-radius: 1rem; color: #94a3b8; font-weight: 700; font-size: 0.875rem; transition: 0.3s; }
 .nav-btn.active { background: #2563eb; color: white; box-shadow: 0 10px 30px rgba(37,99,235,0.3); }
 .label { font-size: 10px; font-weight: 900; text-transform: uppercase; color: #94a3b8; margin-bottom: 0.5rem; display: block; }
@@ -8,22 +8,26 @@
 .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 90; }
 .overlay.open { display: block; }
 
+/* Custom Scrollbar for a cleaner Look */
+.custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+
 @media (max-width: 1024px) {
     #sidebar { transform: translateX(-100%); position: fixed; inset: 0; width: 280px; z-index: 100; border-radius: 0; }
     main { display: block !important; overflow-y: auto !important; height: auto !important; }
     section { overflow: visible !important; border-right: none !important; }
     
+    /* MOBILE PREVIEW FIX */
     .preview-viewport { 
         width: 100%; 
-        overflow: hidden; 
-        display: flex; 
-        justify-content: center; 
-        align-items: flex-start;
-        background: #f8fafc;
-        min-height: 100px; /* Calculated by JS */
+        overflow-x: auto; /* Enable swiping to see the edges */
+        display: block; 
+        background: #f1f5f9;
+        -webkit-overflow-scrolling: touch;
     }
+    
     #pdfArea { 
-        transform-origin: top center; 
-        box-shadow: 0 0 40px rgba(0,0,0,0.1);
+        transform-origin: top left; /* Align to top left for natural scrolling */
+        margin-bottom: 20px;
     }
 }
