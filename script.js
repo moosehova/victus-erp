@@ -2,6 +2,35 @@ let currentRefNumber = 1100;
 let curDocType = 'Quotation';
 let taxRate = 0.16;
 
+function adjustMobileScale() {
+    const pdfArea = document.getElementById('pdfArea');
+    const wrapper = document.getElementById('scale-wrapper');
+    
+    // A4 dimensions in pixels
+    const A4_W = 794; 
+    const A4_H = 1123;
+    
+    if (window.innerWidth < 1024) {
+        // Calculate the perfect center fit for the phone
+        const padding = 32; 
+        const availableWidth = window.innerWidth - padding;
+        let scale = availableWidth / A4_W;
+        
+        // Cap the size so it doesn't get ridiculously huge on tablets
+        if (scale > 0.48) scale = 0.48; 
+        
+        pdfArea.style.transform = `scale(${scale})`;
+        
+        // This is the magic! It tells the browser EXACTLY how tall the scaled paper is
+        wrapper.style.width = `${A4_W * scale}px`;
+        wrapper.style.height = `${A4_H * scale}px`;
+    } else {
+        pdfArea.style.transform = `scale(0.85)`;
+        wrapper.style.width = `${A4_W * 0.85}px`;
+        wrapper.style.height = `${A4_H * 0.85}px`;
+    }
+}
+
 function updateDocNumber() {
     const prefix = curDocType === 'Quotation' ? 'QT' : curDocType === 'Delivery Note' ? 'DN' : 'INV';
     const finalRef = `VEL-${prefix}-${currentRefNumber}`;
@@ -102,21 +131,30 @@ function sync() {
 
 function finalSave() {
     const el = document.getElementById('pdfArea');
+    
+    // Store original view settings
     const oldTransform = el.style.transform;
+    const oldPosition = el.style.position;
+    
+    // Prep element for pure 100% PDF generation
     el.style.transform = 'scale(1)'; 
+    el.style.position = 'relative'; // Prevents html2canvas from cropping the absolute position
     el.style.height = '296mm'; // Single page lock
 
     html2pdf().from(el).set({ 
         margin: 0, 
         filename: `Victus_${curDocType}_${Date.now()}.pdf`, 
-        html2canvas: { scale: 3, useCORS: true }, 
+        html2canvas: { scale: 3, useCORS: true, scrollY: 0 }, 
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } 
     }).toPdf().get('pdf').then(pdf => {
         const pages = pdf.internal.getNumberOfPages();
         for (let i = pages; i > 1; i--) { pdf.deletePage(i); }
     }).save().then(() => {
+        // Restore view after download
         el.style.transform = oldTransform;
+        el.style.position = oldPosition;
         el.style.height = 'auto';
+        adjustMobileScale(); // Safety recalculation
     });
 }
 
@@ -143,4 +181,8 @@ window.onload = () => {
     applySettings();
     updateDocNumber();
     addRow();
+    adjustMobileScale(); // Run scale calculation immediately
 };
+
+// Recalculate if you flip the phone sideways
+window.onresize = adjustMobileScale;
