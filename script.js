@@ -95,9 +95,12 @@ function saveSettings() {
     const config = {
         tpin: document.getElementById('set-tpin').value,
         tax_rate: document.getElementById('set-tax').value,
+        account_name: document.getElementById('set-acc-name').value,
         bank_name: document.getElementById('set-bank').value,
         account_number: document.getElementById('set-account').value,
-        signature: globalSignature // Includes the base64 image
+        branch_name: document.getElementById('set-branch').value,
+        branch_code: document.getElementById('set-branch-code').value,
+        signature: globalSignature 
     };
     
     fetch('/api/settings', {
@@ -109,7 +112,7 @@ function saveSettings() {
         const data = await res.json();
         if(data.success) {
             showNotification("ERP Settings Cloud Synced ☁️");
-            applySettings(); // Reload to confirm
+            applySettings(); 
         } else {
             showNotification("Cloud Sync Failed 🔴");
         }
@@ -118,7 +121,6 @@ function saveSettings() {
 }
 
 function applySettings() {
-    // Load from Cloud on App Boot
     fetch('/api/settings')
     .then(res => res.json())
     .then(data => {
@@ -126,25 +128,30 @@ function applySettings() {
             const config = data.data;
             taxRate = (parseFloat(config.tax_rate) || 16) / 100;
             
-            // Populate Inputs in Settings View
+            // Populate Inputs
             document.getElementById('set-tpin').value = config.tpin || '';
             document.getElementById('set-tax').value = config.tax_rate || '';
+            document.getElementById('set-acc-name').value = config.account_name || '';
             document.getElementById('set-bank').value = config.bank_name || '';
             document.getElementById('set-account').value = config.account_number || '';
+            document.getElementById('set-branch').value = config.branch_name || '';
+            document.getElementById('set-branch-code').value = config.branch_code || '';
             
             // Populate Display on Paper
             document.getElementById('pVatRate').innerText = config.tax_rate || 16;
             document.getElementById('pHeaderDetails').innerHTML = `TPIN: ${config.tpin || ''} <br> #256, 2341/M/1 MUSIKILI ROAD, LUSAKA, ZAMBIA`;
-            document.getElementById('pFooterInfo').innerText = `Bank Details: ${config.bank_name || ''} | Account: ${config.account_number || ''}`;
             
-            // Render Signature if it exists in the cloud
+            // Build the professional Bank String
+            const bankString = `Bank: ${config.bank_name || ''} | Acc Name: ${config.account_name || ''} | Acc No: ${config.account_number || ''} | Branch: ${config.branch_name || ''} (${config.branch_code || ''})`;
+            document.getElementById('pFooterInfo').innerText = bankString;
+            
             if (config.signature && config.signature !== 'null') {
                 globalSignature = config.signature;
                 const sigImg = document.getElementById('pSignature');
                 sigImg.src = config.signature;
                 sigImg.classList.remove('hidden');
             }
-            sync(); // Recalculate totals with cloud tax rate
+            sync(); 
         }
     })
     .catch(err => console.log("Could not load cloud settings yet."));
