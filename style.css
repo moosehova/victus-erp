@@ -8,34 +8,21 @@
 .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 90; }
 .overlay.open { display: block; }
 
-/* The new scale wrapper structure */
-#scale-wrapper {
-    position: relative;
-    margin: 0 auto;
-    transition: width 0.3s ease, height 0.3s ease;
-}
-
-#pdfArea {
-    position: absolute;
-    top: 0; 
-    left: 0;
-    transform-origin: top left;
-}
+#scale-wrapper { position: relative; margin: 0 auto; }
+#pdfArea { transform-origin: top left; }
 
 @media (max-width: 1024px) {
     #sidebar { transform: translateX(-100%); position: fixed; inset: 0; width: 280px; }
     
-    /* Crucial Fix: Allows the entire screen to scroll vertically like a normal website */
+    /* Let the screen scroll vertically like a normal website */
     main { 
-        display: flex !important; 
-        flex-direction: column !important; 
-        height: 100% !important; 
+        display: block !important; 
+        height: 100vh !important; 
         overflow-y: auto !important; 
     }
     
-    /* Disables internal scrolling so the page scrolls as one continuous piece */
     #previewPanel, #editor-view, #settings-view {
-        overflow-y: visible !important;
+        overflow: visible !important;
         height: auto !important;
     }
 }

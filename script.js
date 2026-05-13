@@ -5,29 +5,36 @@ let taxRate = 0.16;
 function adjustMobileScale() {
     const pdfArea = document.getElementById('pdfArea');
     const wrapper = document.getElementById('scale-wrapper');
+    const previewPanel = document.getElementById('previewPanel');
     
-    // A4 dimensions in pixels
-    const A4_W = 794; 
-    const A4_H = 1123;
+    const paperWidth = 800; 
+    const paperHeight = 1131;
     
     if (window.innerWidth < 1024) {
-        // Calculate the perfect center fit for the phone
-        const padding = 32; 
-        const availableWidth = window.innerWidth - padding;
-        let scale = availableWidth / A4_W;
+        // MOBILE MATH: Calculate width safely, pin to center, and scale
+        const availableWidth = window.innerWidth - 32; // 16px padding on each side
+        let scale = availableWidth / paperWidth;
+        if(scale > 1) scale = 1;
         
-        // Cap the size so it doesn't get ridiculously huge on tablets
-        if (scale > 0.48) scale = 0.48; 
+        pdfArea.style.position = 'absolute';
+        pdfArea.style.top = '0';
+        pdfArea.style.left = '50%';
+        pdfArea.style.transform = `translateX(-50%) scale(${scale})`;
         
+        // Push the download buttons down mathematically
+        wrapper.style.height = `${paperHeight * scale}px`;
+        
+    } else {
+        // DESKTOP MATH: Flexbox centers it, we just apply the scale
+        const panelWidth = previewPanel.clientWidth - 96; 
+        let scale = panelWidth / paperWidth;
+        if (scale > 0.85) scale = 0.85; 
+        
+        pdfArea.style.position = 'relative';
+        pdfArea.style.left = 'auto';
         pdfArea.style.transform = `scale(${scale})`;
         
-        // This is the magic! It tells the browser EXACTLY how tall the scaled paper is
-        wrapper.style.width = `${A4_W * scale}px`;
-        wrapper.style.height = `${A4_H * scale}px`;
-    } else {
-        pdfArea.style.transform = `scale(0.85)`;
-        wrapper.style.width = `${A4_W * 0.85}px`;
-        wrapper.style.height = `${A4_H * 0.85}px`;
+        wrapper.style.height = `${paperHeight * scale}px`;
     }
 }
 
@@ -132,29 +139,30 @@ function sync() {
 function finalSave() {
     const el = document.getElementById('pdfArea');
     
-    // Store original view settings
+    // Store original view settings safely
     const oldTransform = el.style.transform;
     const oldPosition = el.style.position;
+    const oldLeft = el.style.left;
     
-    // Prep element for pure 100% PDF generation
+    // Reset element purely for PDF generation
     el.style.transform = 'scale(1)'; 
-    el.style.position = 'relative'; // Prevents html2canvas from cropping the absolute position
-    el.style.height = '296mm'; // Single page lock
+    el.style.position = 'relative'; 
+    el.style.left = '0';
 
     html2pdf().from(el).set({ 
         margin: 0, 
-        filename: `Victus_${curDocType}_${Date.now()}.pdf`, 
+        filename: `Victus_${curDocType}_${document.getElementById('docNum').value}.pdf`, 
         html2canvas: { scale: 3, useCORS: true, scrollY: 0 }, 
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } 
+        jsPDF: { unit: 'px', format: [800, 1131], orientation: 'portrait' } 
     }).toPdf().get('pdf').then(pdf => {
         const pages = pdf.internal.getNumberOfPages();
         for (let i = pages; i > 1; i--) { pdf.deletePage(i); }
     }).save().then(() => {
-        // Restore view after download
+        // Restore mobile layout
         el.style.transform = oldTransform;
         el.style.position = oldPosition;
-        el.style.height = 'auto';
-        adjustMobileScale(); // Safety recalculation
+        el.style.left = oldLeft;
+        adjustMobileScale(); // Final safety check
     });
 }
 
@@ -181,8 +189,7 @@ window.onload = () => {
     applySettings();
     updateDocNumber();
     addRow();
-    adjustMobileScale(); // Run scale calculation immediately
+    setTimeout(adjustMobileScale, 100); 
 };
 
-// Recalculate if you flip the phone sideways
 window.onresize = adjustMobileScale;
