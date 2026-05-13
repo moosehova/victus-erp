@@ -9,26 +9,13 @@ function updateDocNumber() {
     document.getElementById('pRef').innerText = "REF: " + finalRef;
 }
 
-function switchView(view, btn) {
-    const editor = document.getElementById('editor-view');
-    const settings = document.getElementById('settings-view');
-    if (view === 'settings') {
-        editor.classList.add('hidden');
-        settings.classList.remove('hidden');
-    } else {
-        settings.classList.add('hidden');
-        editor.classList.remove('hidden');
-    }
-    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-    if(btn) btn.classList.add('active');
-}
-
 function setDoc(type, btn) {
     curDocType = type;
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    if(btn) btn.classList.add('active');
     document.getElementById('pType').innerText = type.toUpperCase();
     document.getElementById('editTitle').innerText = type;
     updateDocNumber();
-    if(btn) switchView('editor', btn);
     if(window.innerWidth < 1024) toggleMenu();
     sync();
 }
@@ -53,7 +40,7 @@ function saveSettings() {
     };
     localStorage.setItem('victus_config', JSON.stringify(config));
     applySettings();
-    alert("ERP Configuration Saved.");
+    alert("Victus ERP Configuration Saved.");
 }
 
 function applySettings() {
@@ -66,7 +53,7 @@ function applySettings() {
     if (saved) {
         const config = JSON.parse(saved);
         taxRate = (parseFloat(config.tax) || 16) / 100;
-        document.getElementById('pVatRate').innerText = config.tax || "16.0";
+        document.getElementById('pVatRate').innerText = config.tax;
         document.getElementById('pHeaderDetails').innerHTML = `TPIN: ${config.tpin} <br> #256, 2341/M/1 MUSIKILI ROAD, LUSAKA, ZAMBIA`;
         document.getElementById('pFooterInfo').innerText = `Bank Details: ${config.bank} | Account: ${config.account}`;
     }
@@ -104,7 +91,7 @@ function sync() {
         const p = parseFloat(r.querySelector('.i-price').value) || 0;
         const total = q * p;
         sub += total;
-        if(d) tableBody.innerHTML += `<tr><td class="py-4 px-4 uppercase">${d}</td><td class="text-center font-bold text-slate-600">${q}</td><td class="text-right">ZMW ${p.toLocaleString()}</td><td class="text-right font-black">ZMW ${total.toLocaleString()}</td></tr>`;
+        if(d) tableBody.innerHTML += `<tr><td class="py-4 px-6 uppercase">${d}</td><td class="text-center font-bold text-slate-600">${q}</td><td class="text-right">ZMW ${p.toLocaleString()}</td><td class="text-right font-black">ZMW ${total.toLocaleString()}</td></tr>`;
     });
 
     const vat = sub * taxRate;
@@ -115,13 +102,9 @@ function sync() {
 
 function finalSave() {
     const el = document.getElementById('pdfArea');
-    const isMobile = window.innerWidth < 1024;
-    
-    // TEMPORARILY force A4 width for the PDF generator only
-    if(isMobile) {
-        el.style.width = '210mm';
-        el.style.padding = '64px';
-    }
+    const oldTransform = el.style.transform;
+    el.style.transform = 'scale(1)'; 
+    el.style.height = '296mm'; // Single page lock
 
     html2pdf().from(el).set({ 
         margin: 0, 
@@ -132,17 +115,28 @@ function finalSave() {
         const pages = pdf.internal.getNumberOfPages();
         for (let i = pages; i > 1; i--) { pdf.deletePage(i); }
     }).save().then(() => {
-        // Reset back to Phone View
-        if(isMobile) {
-            el.style.width = '100%';
-            el.style.padding = '24px';
-        }
+        el.style.transform = oldTransform;
+        el.style.height = 'auto';
     });
 }
 
 function toggleMenu() {
     document.getElementById('sidebar').classList.toggle('open');
     document.getElementById('overlay').classList.toggle('open');
+}
+
+function switchView(view, btn) {
+    const editor = document.getElementById('editor-view');
+    const settings = document.getElementById('settings-view');
+    if (view === 'settings') {
+        editor.classList.add('hidden');
+        settings.classList.remove('hidden');
+    } else {
+        settings.classList.add('hidden');
+        editor.classList.remove('hidden');
+    }
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    if(btn) btn.classList.add('active');
 }
 
 window.onload = () => {
