@@ -1,6 +1,7 @@
 let currentRefNumber = 1100;
 let curDocType = 'Quotation';
 let taxRate = 0.16;
+let globalSignature = null; // Holds signature before syncing
 
 // --- SLEEK NOTIFICATION ENGINE ---
 function showNotification(message) {
@@ -69,55 +70,84 @@ function setDoc(type, btn) {
     sync();
 }
 
-// --- LOCAL SYNC: SIGNATURE ---
+// --- CLOUD SYNC: SETTINGS & SIGNATURE ---
 function handleSignature(event) {
     const reader = new FileReader();
     const sigImg = document.getElementById('pSignature');
     reader.onload = function() {
         sigImg.src = reader.result;
         sigImg.classList.remove('hidden');
-        localStorage.setItem('victus_signature', reader.result);
-        showNotification("Signature Saved Locally");
+        globalSignature = reader.result; // Hold in memory
+        showNotification("Signature Ready. Click Save to Sync.");
     };
     if(event.target.files[0]) reader.readAsDataURL(event.target.files[0]);
 }
 
-// --- LOCAL SYNC: SETTINGS ---
 function saveSettings() {
+    showNotification("Syncing Settings to Cloud...");
+    
     const config = {
         tpin: document.getElementById('set-tpin').value,
-        tax: document.getElementById('set-tax').value,
-        bank: document.getElementById('set-bank').value,
-        account: document.getElementById('set-account').value
+        tax_rate: document.getElementById('set-tax').value,
+        bank_name: document.getElementById('set-bank').value,
+        account_number: document.getElementById('set-account').value,
+        signature: globalSignature // Includes the base64 image
     };
     
-    localStorage.setItem('victus_config', JSON.stringify(config));
-    applySettings();
-    showNotification("ERP Settings Saved Locally");
+    fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(config)
+    })
+    .then(async (res) => {
+        const data = await res.json();
+        if(data.success) {
+            showNotification("ERP Settings Cloud Synced ☁️");
+            applySettings(); // Reload to confirm
+        } else {
+            showNotification("Cloud Sync Failed 🔴");
+        }
+    })
+    .catch(() => showNotification("Network Error 🔴"));
 }
 
 function applySettings() {
-    const saved = localStorage.getItem('victus_config');
-    const savedSig = localStorage.getItem('victus_signature');
-    
-    if (savedSig) {
-        document.getElementById('pSignature').src = savedSig;
-        document.getElementById('pSignature').classList.remove('hidden');
-    }
-    if (saved) {
-        const config = JSON.parse(saved);
-        taxRate = (parseFloat(config.tax) || 16) / 100;
-        document.getElementById('pVatRate').innerText = config.tax;
-        document.getElementById('pHeaderDetails').innerHTML = `TPIN: ${config.tpin} <br> #256, 2341/M/1 MUSIKILI ROAD, LUSAKA, ZAMBIA`;
-        document.getElementById('pFooterInfo').innerText = `Bank Details: ${config.bank} | Account: ${config.account}`;
-    }
+    // Load from Cloud on App Boot
+    fetch('/api/settings')
+    .then(res => res.json())
+    .then(data => {
+        if(data.success && data.data) {
+            const config = data.data;
+            taxRate = (parseFloat(config.tax_rate) || 16) / 100;
+            
+            // Populate Inputs in Settings View
+            document.getElementById('set-tpin').value = config.tpin || '';
+            document.getElementById('set-tax').value = config.tax_rate || '';
+            document.getElementById('set-bank').value = config.bank_name || '';
+            document.getElementById('set-account').value = config.account_number || '';
+            
+            // Populate Display on Paper
+            document.getElementById('pVatRate').innerText = config.tax_rate || 16;
+            document.getElementById('pHeaderDetails').innerHTML = `TPIN: ${config.tpin || ''} <br> #256, 2341/M/1 MUSIKILI ROAD, LUSAKA, ZAMBIA`;
+            document.getElementById('pFooterInfo').innerText = `Bank Details: ${config.bank_name || ''} | Account: ${config.account_number || ''}`;
+            
+            // Render Signature if it exists in the cloud
+            if (config.signature && config.signature !== 'null') {
+                globalSignature = config.signature;
+                const sigImg = document.getElementById('pSignature');
+                sigImg.src = config.signature;
+                sigImg.classList.remove('hidden');
+            }
+            sync(); // Recalculate totals with cloud tax rate
+        }
+    })
+    .catch(err => console.log("Could not load cloud settings yet."));
 }
 
-// --- CLOUD SYNC: ARCHIVE DOCUMENT (VERCEL API) ---
+// --- CLOUD SYNC: ARCHIVE DOCUMENT ---
 function saveToNeon() {
     showNotification("Syncing to Neon Database...");
 
-    // 1. Gather all line items
     const itemsArray = [];
     document.querySelectorAll('.item-row').forEach(row => {
         itemsArray.push({
@@ -127,7 +157,6 @@ function saveToNeon() {
         });
     });
 
-    // 2. Format data to match your Neon SQL query
     const docData = {
         ref_no: document.getElementById('docNum').value,
         doc_type: curDocType,
@@ -138,7 +167,6 @@ function saveToNeon() {
         total_amount: document.getElementById('pTotal').innerText.replace('ZMW ', '')
     };
 
-    // 3. Send to Vercel Serverless Function
     fetch('/api/save-to-neon', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -155,10 +183,7 @@ function saveToNeon() {
             showNotification("Archive Failed 🔴");
         }
     })
-    .catch((error) => {
-        console.error("Network Error:", error);
-        showNotification("Failed to Connect 🔴");
-    });
+    .catch(() => showNotification("Network Error 🔴"));
 }
 
 // --- BUILDER ENGINE ---
