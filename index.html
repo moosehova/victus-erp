@@ -107,13 +107,22 @@
                 </div>
                 <div class="bg-white p-6 rounded-[2.5rem] border border-slate-200 shadow-sm">
                     <h3 class="label mb-4 text-green-600">Finance & Banking</h3>
-                    <input type="text" id="set-acc-name" placeholder="Account Name (e.g. MUSOLE CHITOTI)"
-                        class="input-box mb-2">
-                    <input type="text" id="set-bank" placeholder="Bank Name (e.g. FNB)" class="input-box mb-2">
-                    <input type="text" id="set-account" placeholder="Account Number" class="input-box mb-2">
-                    <div class="grid grid-cols-2 gap-2">
+                    <input type="text" id="set-acc-name" placeholder="Account Name (e.g. Victus Energy Limited)" class="input-box mb-2">
+                    
+                    <div class="grid grid-cols-2 gap-2 mb-2">
+                        <input type="text" id="set-bank" placeholder="Bank Name (e.g. Absa Bank)" class="input-box">
+                        <input type="text" id="set-account" placeholder="Account Number" class="input-box">
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-2 mb-2">
                         <input type="text" id="set-branch" placeholder="Branch Name" class="input-box">
                         <input type="text" id="set-branch-code" placeholder="Branch Code" class="input-box">
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-2">
+                        <input type="text" id="set-swift" placeholder="Swift Code" class="input-box px-2">
+                        <input type="text" id="set-sort" placeholder="Sort Code" class="input-box px-2">
+                        <input type="text" id="set-currency" placeholder="Currency" class="input-box px-2">
                     </div>
                 </div>
                 <button onclick="saveSettings()" class="w-full bg-slate-900 text-white py-4 rounded-2xl font-black">SAVE

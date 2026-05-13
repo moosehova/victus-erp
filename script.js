@@ -100,6 +100,9 @@ function saveSettings() {
         account_number: document.getElementById('set-account').value,
         branch_name: document.getElementById('set-branch').value,
         branch_code: document.getElementById('set-branch-code').value,
+        swift_code: document.getElementById('set-swift').value,
+        sort_code: document.getElementById('set-sort').value,
+        currency: document.getElementById('set-currency').value,
         signature: globalSignature 
     };
     
@@ -136,14 +139,19 @@ function applySettings() {
             document.getElementById('set-account').value = config.account_number || '';
             document.getElementById('set-branch').value = config.branch_name || '';
             document.getElementById('set-branch-code').value = config.branch_code || '';
+            document.getElementById('set-swift').value = config.swift_code || '';
+            document.getElementById('set-sort').value = config.sort_code || '';
+            document.getElementById('set-currency').value = config.currency || '';
             
             // Populate Display on Paper
             document.getElementById('pVatRate').innerText = config.tax_rate || 16;
             document.getElementById('pHeaderDetails').innerHTML = `TPIN: ${config.tpin || ''} <br> #256, 2341/M/1 MUSIKILI ROAD, LUSAKA, ZAMBIA`;
             
-            // Build the professional Bank String
-            const bankString = `Bank: ${config.bank_name || ''} | Acc Name: ${config.account_name || ''} | Acc No: ${config.account_number || ''} | Branch: ${config.branch_name || ''} (${config.branch_code || ''})`;
-            document.getElementById('pFooterInfo').innerText = bankString;
+            // Build the professional two-line Bank String
+            const bankLine1 = `<span class="font-bold text-slate-700">Bank:</span> ${config.bank_name || ''} &nbsp;|&nbsp; <span class="font-bold text-slate-700">Acc Name:</span> ${config.account_name || ''} &nbsp;|&nbsp; <span class="font-bold text-slate-700">Acc No:</span> ${config.account_number || ''}`;
+            const bankLine2 = `<span class="font-bold text-slate-700">Branch:</span> ${config.branch_name || ''} (${config.branch_code || ''}) &nbsp;|&nbsp; <span class="font-bold text-slate-700">Swift:</span> ${config.swift_code || ''} &nbsp;|&nbsp; <span class="font-bold text-slate-700">Sort:</span> ${config.sort_code || ''} &nbsp;|&nbsp; <span class="font-bold text-slate-700">Curr:</span> ${config.currency || ''}`;
+            
+            document.getElementById('pFooterInfo').innerHTML = `${bankLine1}<br>${bankLine2}`;
             
             if (config.signature && config.signature !== 'null') {
                 globalSignature = config.signature;

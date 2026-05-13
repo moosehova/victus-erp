@@ -16,8 +16,8 @@ export default async function handler(req, res) {
         const data = req.body;
         try {
             await sql`
-                INSERT INTO erp_config (id, tpin, tax_rate, bank_name, account_number, account_name, branch_name, branch_code, signature)
-                VALUES (1, ${data.tpin}, ${data.tax_rate}, ${data.bank_name}, ${data.account_number}, ${data.account_name}, ${data.branch_name}, ${data.branch_code}, ${data.signature})
+                INSERT INTO erp_config (id, tpin, tax_rate, bank_name, account_number, account_name, branch_name, branch_code, swift_code, sort_code, currency, signature)
+                VALUES (1, ${data.tpin}, ${data.tax_rate}, ${data.bank_name}, ${data.account_number}, ${data.account_name}, ${data.branch_name}, ${data.branch_code}, ${data.swift_code}, ${data.sort_code}, ${data.currency}, ${data.signature})
                 ON CONFLICT (id) DO UPDATE SET 
                     tpin = EXCLUDED.tpin,
                     tax_rate = EXCLUDED.tax_rate,
@@ -26,6 +26,9 @@ export default async function handler(req, res) {
                     account_name = EXCLUDED.account_name,
                     branch_name = EXCLUDED.branch_name,
                     branch_code = EXCLUDED.branch_code,
+                    swift_code = EXCLUDED.swift_code,
+                    sort_code = EXCLUDED.sort_code,
+                    currency = EXCLUDED.currency,
                     signature = EXCLUDED.signature
             `;
             return res.status(200).json({ success: true, message: 'Settings saved to cloud' });
