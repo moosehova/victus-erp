@@ -2,34 +2,55 @@ let currentRefNumber = 1100;
 let curDocType = 'Quotation';
 let taxRate = 0.16;
 
+// --- SLEEK NOTIFICATION ENGINE ---
+function showNotification(message) {
+    const existing = document.getElementById('erp-toast');
+    if (existing) existing.remove();
+
+    const toast = document.createElement('div');
+    toast.id = 'erp-toast';
+    toast.className = 'fixed top-10 left-1/2 transform -translate-x-1/2 bg-slate-900 text-white px-8 py-4 rounded-2xl shadow-2xl z-[999] font-black tracking-wider text-xs uppercase border border-slate-700 transition-all duration-300 translate-y-[-20px] opacity-0';
+    toast.innerText = message;
+    
+    document.body.appendChild(toast);
+
+    setTimeout(() => toast.classList.remove('translate-y-[-20px]', 'opacity-0'), 10);
+
+    setTimeout(() => {
+        toast.classList.add('translate-y-[-20px]', 'opacity-0');
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+// --- RESPONSIVE MATH ENGINE ---
 function adjustMobileScale() {
     const pdfArea = document.getElementById('pdfArea');
     const wrapper = document.getElementById('scale-wrapper');
+    const previewPanel = document.getElementById('previewPanel');
+    
+    const paperWidth = 800; 
+    const paperHeight = 1131;
     
     if (window.innerWidth < 1024) {
-        // Fixed dimensions set in HTML
-        const paperWidth = 800; 
-        const paperHeight = 1131;
-        
-        // Measure phone width and subtract 32px for safe margins
         const availableWidth = window.innerWidth - 32;
         let scale = availableWidth / paperWidth;
         
-        // Shrink the paper visually
         pdfArea.style.transform = `scale(${scale})`;
-        
-        // Tell the wrapper exactly how tall the shrunken paper is
-        // This makes your scrollbar perfectly accurate
         wrapper.style.width = `${paperWidth * scale}px`;
         wrapper.style.height = `${paperHeight * scale}px`;
     } else {
-        pdfArea.style.transform = `scale(0.85)`;
-        pdfArea.style.transformOrigin = 'top center';
-        wrapper.style.width = 'auto';
-        wrapper.style.height = 'auto';
+        const availableDesktopWidth = previewPanel.clientWidth - 96; 
+        let scale = availableDesktopWidth / paperWidth;
+        
+        if (scale > 0.8) scale = 0.8; 
+        
+        pdfArea.style.transform = `scale(${scale})`;
+        wrapper.style.width = `${paperWidth * scale}px`;
+        wrapper.style.height = `${paperHeight * scale}px`;
     }
 }
 
+// --- DOCUMENT LOGIC ---
 function updateDocNumber() {
     const prefix = curDocType === 'Quotation' ? 'QT' : curDocType === 'Delivery Note' ? 'DN' : 'INV';
     const finalRef = `VEL-${prefix}-${currentRefNumber}`;
@@ -48,6 +69,7 @@ function setDoc(type, btn) {
     sync();
 }
 
+// --- LOCAL SYNC: SIGNATURE ---
 function handleSignature(event) {
     const reader = new FileReader();
     const sigImg = document.getElementById('pSignature');
@@ -55,10 +77,12 @@ function handleSignature(event) {
         sigImg.src = reader.result;
         sigImg.classList.remove('hidden');
         localStorage.setItem('victus_signature', reader.result);
+        showNotification("Signature Saved Locally");
     };
     if(event.target.files[0]) reader.readAsDataURL(event.target.files[0]);
 }
 
+// --- LOCAL SYNC: SETTINGS ---
 function saveSettings() {
     const config = {
         tpin: document.getElementById('set-tpin').value,
@@ -66,14 +90,16 @@ function saveSettings() {
         bank: document.getElementById('set-bank').value,
         account: document.getElementById('set-account').value
     };
+    
     localStorage.setItem('victus_config', JSON.stringify(config));
     applySettings();
-    alert("Victus ERP Configuration Saved.");
+    showNotification("ERP Settings Saved Locally");
 }
 
 function applySettings() {
     const saved = localStorage.getItem('victus_config');
     const savedSig = localStorage.getItem('victus_signature');
+    
     if (savedSig) {
         document.getElementById('pSignature').src = savedSig;
         document.getElementById('pSignature').classList.remove('hidden');
@@ -87,6 +113,55 @@ function applySettings() {
     }
 }
 
+// --- CLOUD SYNC: ARCHIVE DOCUMENT (VERCEL API) ---
+function saveToNeon() {
+    showNotification("Syncing to Neon Database...");
+
+    // 1. Gather all line items
+    const itemsArray = [];
+    document.querySelectorAll('.item-row').forEach(row => {
+        itemsArray.push({
+            description: row.querySelector('.i-desc').value,
+            qty: row.querySelector('.i-qty').value,
+            price: row.querySelector('.i-price').value
+        });
+    });
+
+    // 2. Format data to match your Neon SQL query
+    const docData = {
+        ref_no: document.getElementById('docNum').value,
+        doc_type: curDocType,
+        client_name: document.getElementById('clientName').value || 'Unknown',
+        address: document.getElementById('address').value || 'None',
+        representative: document.getElementById('salesRep').value || 'Lungowe Lutangu',
+        items: itemsArray,
+        total_amount: document.getElementById('pTotal').innerText.replace('ZMW ', '')
+    };
+
+    // 3. Send to Vercel Serverless Function
+    fetch('/api/save-to-neon', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(docData)
+    })
+    .then(async (res) => {
+        const response = await res.json();
+        if (res.ok && response.success) {
+            showNotification("Document Archived to Neon 🟢");
+            currentRefNumber++;
+            updateDocNumber();
+        } else {
+            console.error(response.error);
+            showNotification("Archive Failed 🔴");
+        }
+    })
+    .catch((error) => {
+        console.error("Network Error:", error);
+        showNotification("Failed to Connect 🔴");
+    });
+}
+
+// --- BUILDER ENGINE ---
 function addRow() {
     const rowId = Date.now();
     const row = document.createElement('div');
@@ -129,31 +204,24 @@ function sync() {
 }
 
 function finalSave() {
+    showNotification("Generating PDF...");
     const el = document.getElementById('pdfArea');
     
-    // Store original view settings
     const oldTransform = el.style.transform;
-    const oldPosition = el.style.position;
-    
-    // Set to absolute 100% pixel scale for perfect PDF capture
     el.style.transform = 'scale(1)'; 
-    el.style.position = 'relative'; 
 
     html2pdf().from(el).set({ 
         margin: 0, 
         filename: `Victus_${curDocType}_${document.getElementById('docNum').value}.pdf`, 
         html2canvas: { scale: 3, useCORS: true, scrollY: 0 }, 
-        // We tell JS PDF to map exactly to our 800x1131 box
         jsPDF: { unit: 'px', format: [800, 1131], orientation: 'portrait' } 
     }).toPdf().get('pdf').then(pdf => {
-        // Enforce 1 page limit
         const pages = pdf.internal.getNumberOfPages();
         for (let i = pages; i > 1; i--) { pdf.deletePage(i); }
     }).save().then(() => {
-        // Restore mobile view
         el.style.transform = oldTransform;
-        el.style.position = oldPosition;
         adjustMobileScale();
+        showNotification("Download Complete!");
     });
 }
 
@@ -180,7 +248,6 @@ window.onload = () => {
     applySettings();
     updateDocNumber();
     addRow();
-    // Delay slightly to ensure fonts load before calculating width
     setTimeout(adjustMobileScale, 100); 
 };
 
