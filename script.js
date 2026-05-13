@@ -5,36 +5,28 @@ let taxRate = 0.16;
 function adjustMobileScale() {
     const pdfArea = document.getElementById('pdfArea');
     const wrapper = document.getElementById('scale-wrapper');
-    const previewPanel = document.getElementById('previewPanel');
-    
-    const paperWidth = 800; 
-    const paperHeight = 1131;
     
     if (window.innerWidth < 1024) {
-        // MOBILE MATH: Calculate width safely, pin to center, and scale
-        const availableWidth = window.innerWidth - 32; // 16px padding on each side
+        // Fixed dimensions set in HTML
+        const paperWidth = 800; 
+        const paperHeight = 1131;
+        
+        // Measure phone width and subtract 32px for safe margins
+        const availableWidth = window.innerWidth - 32;
         let scale = availableWidth / paperWidth;
-        if(scale > 1) scale = 1;
         
-        pdfArea.style.position = 'absolute';
-        pdfArea.style.top = '0';
-        pdfArea.style.left = '50%';
-        pdfArea.style.transform = `translateX(-50%) scale(${scale})`;
-        
-        // Push the download buttons down mathematically
-        wrapper.style.height = `${paperHeight * scale}px`;
-        
-    } else {
-        // DESKTOP MATH: Flexbox centers it, we just apply the scale
-        const panelWidth = previewPanel.clientWidth - 96; 
-        let scale = panelWidth / paperWidth;
-        if (scale > 0.85) scale = 0.85; 
-        
-        pdfArea.style.position = 'relative';
-        pdfArea.style.left = 'auto';
+        // Shrink the paper visually
         pdfArea.style.transform = `scale(${scale})`;
         
+        // Tell the wrapper exactly how tall the shrunken paper is
+        // This makes your scrollbar perfectly accurate
+        wrapper.style.width = `${paperWidth * scale}px`;
         wrapper.style.height = `${paperHeight * scale}px`;
+    } else {
+        pdfArea.style.transform = `scale(0.85)`;
+        pdfArea.style.transformOrigin = 'top center';
+        wrapper.style.width = 'auto';
+        wrapper.style.height = 'auto';
     }
 }
 
@@ -139,30 +131,29 @@ function sync() {
 function finalSave() {
     const el = document.getElementById('pdfArea');
     
-    // Store original view settings safely
+    // Store original view settings
     const oldTransform = el.style.transform;
     const oldPosition = el.style.position;
-    const oldLeft = el.style.left;
     
-    // Reset element purely for PDF generation
+    // Set to absolute 100% pixel scale for perfect PDF capture
     el.style.transform = 'scale(1)'; 
     el.style.position = 'relative'; 
-    el.style.left = '0';
 
     html2pdf().from(el).set({ 
         margin: 0, 
         filename: `Victus_${curDocType}_${document.getElementById('docNum').value}.pdf`, 
         html2canvas: { scale: 3, useCORS: true, scrollY: 0 }, 
+        // We tell JS PDF to map exactly to our 800x1131 box
         jsPDF: { unit: 'px', format: [800, 1131], orientation: 'portrait' } 
     }).toPdf().get('pdf').then(pdf => {
+        // Enforce 1 page limit
         const pages = pdf.internal.getNumberOfPages();
         for (let i = pages; i > 1; i--) { pdf.deletePage(i); }
     }).save().then(() => {
-        // Restore mobile layout
+        // Restore mobile view
         el.style.transform = oldTransform;
         el.style.position = oldPosition;
-        el.style.left = oldLeft;
-        adjustMobileScale(); // Final safety check
+        adjustMobileScale();
     });
 }
 
@@ -189,6 +180,7 @@ window.onload = () => {
     applySettings();
     updateDocNumber();
     addRow();
+    // Delay slightly to ensure fonts load before calculating width
     setTimeout(adjustMobileScale, 100); 
 };
 
