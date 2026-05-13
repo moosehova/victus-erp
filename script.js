@@ -66,7 +66,13 @@ function setDoc(type, btn) {
     document.getElementById('pType').innerText = type.toUpperCase();
     document.getElementById('editTitle').innerText = type;
     updateDocNumber();
-    if(window.innerWidth < 1024) toggleMenu();
+    
+    // Safely force-close the menu on mobile
+    if(window.innerWidth < 1024) {
+        document.getElementById('sidebar').classList.remove('open');
+        document.getElementById('overlay').classList.remove('open');
+    }
+    
     sync();
 }
 
@@ -267,6 +273,12 @@ function switchView(view, btn) {
     }
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
     if(btn) btn.classList.add('active');
+
+    // Safely force-close the menu on mobile
+    if(window.innerWidth < 1024) {
+        document.getElementById('sidebar').classList.remove('open');
+        document.getElementById('overlay').classList.remove('open');
+    }
 }
 
 window.onload = () => {
