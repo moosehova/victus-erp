@@ -1,8 +1,7 @@
 let currentRefNumber = 1100;
 let curDocType = 'Quotation';
-let taxRate = 0.16;
-let globalSignature = null; // Holds signature before syncing
-
+let taxRate = 0; // Changed this to default to 0%
+let globalSignature = null;
 // --- SLEEK NOTIFICATION ENGINE ---
 function showNotification(message) {
     const existing = document.getElementById('erp-toast');
@@ -129,7 +128,10 @@ function applySettings() {
     .then(data => {
         if(data.success && data.data) {
             const config = data.data;
-            taxRate = (parseFloat(config.tax_rate) || 16) / 100;
+            
+            // Safely parse tax. If it's empty, make it 0.
+            const savedTax = (config.tax_rate !== undefined && config.tax_rate !== null && config.tax_rate !== '') ? parseFloat(config.tax_rate) : 0;
+            taxRate = savedTax / 100;
             
             // Populate Inputs
             document.getElementById('set-tpin').value = config.tpin || '';
@@ -144,7 +146,7 @@ function applySettings() {
             document.getElementById('set-currency').value = config.currency || '';
             
             // Populate Display on Paper
-            document.getElementById('pVatRate').innerText = config.tax_rate || 16;
+            document.getElementById('pVatRate').innerText = savedTax;
             document.getElementById('pHeaderDetails').innerHTML = `TPIN: ${config.tpin || ''} <br> #256, 2341/M/1 MUSIKILI ROAD, LUSAKA, ZAMBIA`;
             
             // Build the professional two-line Bank String
@@ -159,12 +161,11 @@ function applySettings() {
                 sigImg.src = config.signature;
                 sigImg.classList.remove('hidden');
             }
-            sync(); 
+            sync(); // Recalculate totals with the true tax rate
         }
     })
     .catch(err => console.log("Could not load cloud settings yet."));
 }
-
 // --- CLOUD SYNC: ARCHIVE DOCUMENT ---
 function saveToNeon() {
     showNotification("Syncing to Neon Database...");
