@@ -432,13 +432,40 @@ function loadDashboard() {
     });
 }
 
+// --- CRM AUTO-FILL ENGINE ---
+let clientDatabase = {}; 
+
+function loadClients() {
+    fetch('/api/get-clients')
+    .then(res => res.json())
+    .then(data => {
+        if(data.success) {
+            const datalist = document.getElementById('clientData');
+            datalist.innerHTML = '';
+            data.data.forEach(client => {
+                clientDatabase[client.name] = client.address; // Memorize address
+                datalist.innerHTML += `<option value="${client.name}">`; // Add to dropdown
+            });
+        }
+    })
+    .catch(err => console.log("Failed to load CRM data."));
+}
+
+function autoFillClient() {
+    const selectedName = document.getElementById('clientName').value;
+    if(clientDatabase[selectedName]) {
+        document.getElementById('address').value = clientDatabase[selectedName];
+        sync(); // Update the paper instantly
+    }
+}
+
 window.onload = () => {
     applySettings();
     updateDocNumber();
     addRow();
+    loadClients(); // <--- Add this new line here
     setTimeout(adjustMobileScale, 100); 
 
-    // Set Dashboard as the default Home Screen
     const dashBtn = document.querySelector('button[onclick*="dashboard"]');
     switchView('dashboard', dashBtn);
 };

@@ -74,8 +74,11 @@
                         class="input-box"></div>
             </div>
 
-            <div class="mb-6"><label id="partyLabel" class="label">Client / Buyer</label><input type="text"
-                    id="clientName" oninput="sync()" class="input-box"></div>
+            <div class="mb-6">
+                <label id="partyLabel" class="label">Client / Buyer</label>
+                <input type="text" id="clientName" list="clientData" oninput="sync(); autoFillClient();" class="input-box" placeholder="Start typing client name...">
+                <datalist id="clientData"></datalist>
+            </div>
             <div class="mb-6"><label class="label">Address</label><textarea id="address" oninput="sync()"
                     class="input-box h-24" placeholder="Plot, Road, City"></textarea></div>
 

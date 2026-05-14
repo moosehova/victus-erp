@@ -9,6 +9,16 @@ export default async function handler(req, res) {
     const data = req.body;
 
     try {
+        // 1. Memorize the Client (NEW CRM LOGIC)
+        if (data.client_name && data.client_name !== 'Unknown') {
+            await sql`
+                INSERT INTO clients (name, address) 
+                VALUES (${data.client_name}, ${data.address})
+                ON CONFLICT (name) DO UPDATE SET address = EXCLUDED.address
+            `;
+        }
+
+        // 2. Archive the Document
         await sql`
             INSERT INTO documents (
                 ref_no, 
@@ -30,7 +40,7 @@ export default async function handler(req, res) {
                 ${data.contract_details ? JSON.stringify(data.contract_details) : null}
             )
         `;
-        return res.status(200).json({ success: true, message: 'Victus Document Archived' });
+        return res.status(200).json({ success: true, message: 'Victus Document Archived & Client Saved' });
     } catch (error) {
         console.error(error);
         return res.status(500).json({ success: false, error: error.message });
