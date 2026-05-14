@@ -588,6 +588,39 @@ function loadClients() {
     })
     .catch(err => console.log("Failed to load CRM data."));
 }
+// --- PRODUCT INVENTORY ENGINE ---
+let productDatabase = {}; 
+
+function loadProducts() {
+    fetch('/api/get-products')
+    .then(res => res.json())
+    .then(data => {
+        if(data.success) {
+            const datalist = document.getElementById('productData');
+            datalist.innerHTML = '';
+            data.data.forEach(prod => {
+                productDatabase[prod.name] = prod; // Memorize all the specific fees
+                datalist.innerHTML += `<option value="${prod.name}">`; 
+            });
+        }
+    })
+    .catch(err => console.log("Failed to load Product data."));
+}
+
+function autoFillProduct() {
+    const selectedName = document.getElementById('dr-product').value;
+    const prod = productDatabase[selectedName];
+    
+    if(prod) {
+        // Auto-fill all the complex fields instantly
+        document.getElementById('dr-price').value = prod.base_price || '';
+        document.getElementById('dr-storage').value = prod.storage_cost || '';
+        document.getElementById('dr-marking').value = prod.marking_fee || '';
+        document.getElementById('dr-srf').value = prod.srf || '';
+        document.getElementById('dr-erb').value = prod.erb || '';
+        sync(); // Update the paper instantly
+    }
+}
 
 function autoFillClient() {
     const selectedName = document.getElementById('clientName').value;
@@ -601,7 +634,8 @@ window.onload = () => {
     applySettings();
     updateDocNumber();
     addRow();
-    loadClients(); // <--- Add this new line here
+    loadClients(); 
+    loadProducts(); // <--- Add this new line here
     setTimeout(adjustMobileScale, 100); 
 
     const dashBtn = document.querySelector('button[onclick*="dashboard"]');

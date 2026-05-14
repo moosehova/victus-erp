@@ -9,8 +9,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0F172A">
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <meta name="theme-color" content="#0F172A">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body class="bg-[#0F172A] h-screen w-screen overflow-hidden p-0 lg:p-4 flex gap-0 lg:gap-4">
@@ -95,54 +95,57 @@
 
             <div id="recap-builder" class="hidden space-y-4">
                 <h3 class="font-bold text-slate-800 text-xs uppercase mb-2 border-b pb-1">Contract Details</h3>
-                <div class="grid grid-cols-2 gap-4">
-                    <div><label class="label">Product</label><input type="text" id="dr-product" oninput="sync()"
-                            class="input-box" placeholder="e.g. Gasoil"></div>
-                    <div><label class="label">Quantity</label><input type="text" id="dr-qty" oninput="sync()"
-                            class="input-box" placeholder="e.g. 50,000"></div>
-                    <div><label class="label">Price</label><input type="text" id="dr-price" oninput="sync()"
-                            class="input-box" placeholder="ZMW per litre"></div>
-                    <div><label class="label">VAT</label><input type="text" id="dr-vat" oninput="sync()"
-                            class="input-box" placeholder="e.g. 16%"></div>
+                <div>
+                    <label class="label">Product</label>
+                    <input type="text" id="dr-product" list="productData" oninput="sync(); autoFillProduct();"
+                        class="input-box" placeholder="Start typing product...">
+                    <datalist id="productData"></datalist>
                 </div>
+                <div><label class="label">Quantity</label><input type="text" id="dr-qty" oninput="sync()"
+                        class="input-box" placeholder="e.g. 50,000"></div>
+                <div><label class="label">Price</label><input type="text" id="dr-price" oninput="sync()"
+                        class="input-box" placeholder="ZMW per litre"></div>
+                <div><label class="label">VAT</label><input type="text" id="dr-vat" oninput="sync()" class="input-box"
+                        placeholder="e.g. 16%"></div>
+            </div>
 
-                <h3 class="font-bold text-slate-800 text-xs uppercase mb-2 border-b pb-1 mt-4">Fees & Surcharges</h3>
-                <div class="grid grid-cols-2 gap-4">
-                    <div><label class="label">Storage Costs</label><input type="text" id="dr-storage" oninput="sync()"
-                            class="input-box"></div>
-                    <div><label class="label">Marking Fee</label><input type="text" id="dr-marking" oninput="sync()"
-                            class="input-box"></div>
-                    <div><label class="label">Strategic Res. Fund</label><input type="text" id="dr-srf" oninput="sync()"
-                            class="input-box"></div>
-                    <div><label class="label">ERB Fees</label><input type="text" id="dr-erb" oninput="sync()"
-                            class="input-box"></div>
-                </div>
+            <h3 class="font-bold text-slate-800 text-xs uppercase mb-2 border-b pb-1 mt-4">Fees & Surcharges</h3>
+            <div class="grid grid-cols-2 gap-4">
+                <div><label class="label">Storage Costs</label><input type="text" id="dr-storage" oninput="sync()"
+                        class="input-box"></div>
+                <div><label class="label">Marking Fee</label><input type="text" id="dr-marking" oninput="sync()"
+                        class="input-box"></div>
+                <div><label class="label">Strategic Res. Fund</label><input type="text" id="dr-srf" oninput="sync()"
+                        class="input-box"></div>
+                <div><label class="label">ERB Fees</label><input type="text" id="dr-erb" oninput="sync()"
+                        class="input-box"></div>
+            </div>
 
-                <h3 class="font-bold text-slate-800 text-xs uppercase mb-2 border-b pb-1 mt-4">Logistics & Terms</h3>
-                <div class="mb-4"><label class="label">Delivery Window</label><input type="text" id="dr-window"
-                        oninput="sync()" class="input-box" placeholder="DD/MM/YYYY to DD/MM/YYYY"></div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div><label class="label">Delivery</label><input type="text" id="dr-delivery" oninput="sync()"
-                            class="input-box"></div>
-                    <div><label class="label">Payment Terms</label><input type="text" id="dr-payment" oninput="sync()"
-                            class="input-box"></div>
-                    <div><label class="label">Laytime</label><input type="text" id="dr-laytime" oninput="sync()"
-                            class="input-box"></div>
-                    <div><label class="label">Qty Determination</label><input type="text" id="dr-qtydet"
-                            oninput="sync()" class="input-box"></div>
-                </div>
+            <h3 class="font-bold text-slate-800 text-xs uppercase mb-2 border-b pb-1 mt-4">Logistics & Terms</h3>
+            <div class="mb-4"><label class="label">Delivery Window</label><input type="text" id="dr-window"
+                    oninput="sync()" class="input-box" placeholder="DD/MM/YYYY to DD/MM/YYYY"></div>
+            <div class="grid grid-cols-2 gap-4">
+                <div><label class="label">Delivery</label><input type="text" id="dr-delivery" oninput="sync()"
+                        class="input-box"></div>
+                <div><label class="label">Payment Terms</label><input type="text" id="dr-payment" oninput="sync()"
+                        class="input-box"></div>
+                <div><label class="label">Laytime</label><input type="text" id="dr-laytime" oninput="sync()"
+                        class="input-box"></div>
+                <div><label class="label">Qty Determination</label><input type="text" id="dr-qtydet" oninput="sync()"
+                        class="input-box"></div>
+            </div>
 
-                <h3 class="font-bold text-slate-800 text-xs uppercase mb-2 border-b pb-1 mt-4">Standard Clauses</h3>
-                <div class="mb-4"><label class="label">Quality</label><input type="text" id="dr-quality"
-                        oninput="sync()" class="input-box" value="As per ERB specification"></div>
-                <div class="mb-4"><label class="label">Transfer of Custody</label><textarea id="dr-transfer"
-                        oninput="sync()"
-                        class="input-box h-16">Product passage through the terminal flange(s) into receiving trucks pipe/tanks.</textarea>
-                </div>
-                <div class="mb-4"><label class="label">Inspection</label><input type="text" id="dr-inspection"
-                        oninput="sync()" class="input-box" value="Mutually accepted by both buyer and seller"></div>
-                <div class="mb-4"><label class="label">Others</label><input type="text" id="dr-others" oninput="sync()"
-                        class="input-box" value="Pricing to be finalized to 2 decimal places."></div>
+            <h3 class="font-bold text-slate-800 text-xs uppercase mb-2 border-b pb-1 mt-4">Standard Clauses</h3>
+            <div class="mb-4"><label class="label">Quality</label><input type="text" id="dr-quality" oninput="sync()"
+                    class="input-box" value="As per ERB specification"></div>
+            <div class="mb-4"><label class="label">Transfer of Custody</label><textarea id="dr-transfer"
+                    oninput="sync()"
+                    class="input-box h-16">Product passage through the terminal flange(s) into receiving trucks pipe/tanks.</textarea>
+            </div>
+            <div class="mb-4"><label class="label">Inspection</label><input type="text" id="dr-inspection"
+                    oninput="sync()" class="input-box" value="Mutually accepted by both buyer and seller"></div>
+            <div class="mb-4"><label class="label">Others</label><input type="text" id="dr-others" oninput="sync()"
+                    class="input-box" value="Pricing to be finalized to 2 decimal places."></div>
             </div>
         </section>
 
@@ -209,16 +212,19 @@
 
             <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 mb-6">
                 <h3 class="font-bold text-slate-800 text-xs uppercase tracking-widest mb-4">Revenue Growth</h3>
-                
+
                 <div class="relative w-full h-64">
                     <canvas id="revenueChart"></canvas>
                 </div>
             </div>
 
             <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden flex-1 flex flex-col">
-                <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex flex-col lg:flex-row justify-between items-center gap-4">
+                <div
+                    class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex flex-col lg:flex-row justify-between items-center gap-4">
                     <h3 class="font-bold text-slate-800 uppercase tracking-wide">Document Ledger</h3>
-                    <input type="text" id="dashSearch" onkeyup="filterDashboard()" placeholder="🔍 Search Ref, Client, or Type..." class="px-4 py-2 rounded-xl border border-slate-200 text-sm w-full lg:w-72 focus:outline-none focus:border-blue-500">
+                    <input type="text" id="dashSearch" onkeyup="filterDashboard()"
+                        placeholder="🔍 Search Ref, Client, or Type..."
+                        class="px-4 py-2 rounded-xl border border-slate-200 text-sm w-full lg:w-72 focus:outline-none focus:border-blue-500">
                 </div>
                 <div class="overflow-auto flex-1">
                     <table class="w-full text-sm text-left">
@@ -233,7 +239,7 @@
                             </tr>
                         </thead>
                         <tbody id="dash-table-body" class="divide-y divide-slate-100">
-                            </tbody>
+                        </tbody>
                     </table>
                 </div>
             </div>
