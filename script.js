@@ -367,23 +367,25 @@ function switchView(view, btn) {
     preview.classList.add('hidden');
     dashboard.classList.add('hidden');
 
-    // Show only what's needed based on the button clicked
+    // Show only what's needed
     if (view === 'dashboard') {
         dashboard.classList.remove('hidden');
-        loadDashboard(); // Trigger the database fetch
+        loadDashboard(); 
     } else if (view === 'settings') {
         settings.classList.remove('hidden');
         preview.classList.remove('hidden');
+        setTimeout(adjustMobileScale, 50); // FIX: Recalculate paper scale
     } else {
         editor.classList.remove('hidden');
         preview.classList.remove('hidden');
+        setTimeout(adjustMobileScale, 50); // FIX: Recalculate paper scale
     }
 
     // Handle active button styles
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
     if(btn) btn.classList.add('active');
 
-    // Close mobile sidebar
+    // Close mobile sidebar safely
     if(window.innerWidth < 1024) {
         document.getElementById('sidebar').classList.remove('open');
         document.getElementById('overlay').classList.remove('open');
