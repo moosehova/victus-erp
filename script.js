@@ -365,21 +365,26 @@ function switchView(view, btn) {
     const settings = document.getElementById('settings-view');
     const preview = document.getElementById('previewPanel');
     const dashboard = document.getElementById('dashboard-view');
+    const expenses = document.getElementById('expenses-view'); // Add this line
     
     // Hide everything first
     editor.classList.add('hidden');
     settings.classList.add('hidden');
     preview.classList.add('hidden');
     dashboard.classList.add('hidden');
+    expenses.classList.add('hidden'); // Add this line
 
     // Show only what's needed
     if (view === 'dashboard') {
         dashboard.classList.remove('hidden');
         loadDashboard(); 
+    } else if (view === 'expenses') {
+        expenses.classList.remove('hidden');
+        loadExpenses(); // This triggers the database fetch for expenses!
     } else if (view === 'settings') {
         settings.classList.remove('hidden');
         preview.classList.remove('hidden');
-        loadProductSettings(); // Fetches live catalog pricing
+        loadProductSettings(); 
         setTimeout(adjustMobileScale, 50); 
     } else {
         editor.classList.remove('hidden');
@@ -396,6 +401,49 @@ function switchView(view, btn) {
         document.getElementById('sidebar').classList.remove('open');
         document.getElementById('overlay').classList.remove('open');
     }
+}
+// Add these functions to your script.js
+function saveExpense() {
+    const data = {
+        date: document.getElementById('exp-date').value || new Date().toISOString().split('T')[0],
+        category: document.getElementById('exp-cat').value,
+        description: document.getElementById('exp-desc').value,
+        amount: document.getElementById('exp-amt').value
+    };
+
+    if(!data.amount) return showNotification("Please enter an amount 🔴");
+
+    fetch('/api/save-expense', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    }).then(res => res.json()).then(res => {
+        if(res.success) {
+            showNotification("Expense Recorded 🔴");
+            loadExpenses();
+            document.getElementById('exp-desc').value = '';
+            document.getElementById('exp-amt').value = '';
+        }
+    });
+}
+
+function loadExpenses() {
+    fetch('/api/get-expenses')
+    .then(res => res.json())
+    .then(data => {
+        const body = document.getElementById('expense-table-body');
+        body.innerHTML = '';
+        let totalExp = 0;
+        data.data.forEach(exp => {
+            totalExp += parseFloat(exp.amount);
+            body.innerHTML += `<tr>
+                <td class="py-4 px-6 text-slate-500">${new Date(exp.date).toLocaleDateString()}</td>
+                <td class="py-4 px-6 font-bold text-slate-700">${exp.category}</td>
+                <td class="py-4 px-6 text-right font-black text-red-600">ZMW ${parseFloat(exp.amount).toLocaleString()}</td>
+            </tr>`;
+        });
+        // We will use totalExp later to calculate Net Profit on the dashboard!
+    });
 }
 // --- DASHBOARD DATA ENGINE ---
 let dashboardDocs = []; // Global array for search filtering
