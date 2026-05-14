@@ -358,20 +358,78 @@ function toggleMenu() {
 function switchView(view, btn) {
     const editor = document.getElementById('editor-view');
     const settings = document.getElementById('settings-view');
-    if (view === 'settings') {
-        editor.classList.add('hidden');
+    const preview = document.getElementById('previewPanel');
+    const dashboard = document.getElementById('dashboard-view');
+    
+    // Hide everything first
+    editor.classList.add('hidden');
+    settings.classList.add('hidden');
+    preview.classList.add('hidden');
+    dashboard.classList.add('hidden');
+
+    // Show only what's needed based on the button clicked
+    if (view === 'dashboard') {
+        dashboard.classList.remove('hidden');
+        loadDashboard(); // Trigger the database fetch
+    } else if (view === 'settings') {
         settings.classList.remove('hidden');
+        preview.classList.remove('hidden');
     } else {
-        settings.classList.add('hidden');
         editor.classList.remove('hidden');
+        preview.classList.remove('hidden');
     }
+
+    // Handle active button styles
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
     if(btn) btn.classList.add('active');
 
+    // Close mobile sidebar
     if(window.innerWidth < 1024) {
         document.getElementById('sidebar').classList.remove('open');
         document.getElementById('overlay').classList.remove('open');
     }
+}
+
+// --- DASHBOARD DATA ENGINE ---
+function loadDashboard() {
+    const tableBody = document.getElementById('dash-table-body');
+    tableBody.innerHTML = '<tr><td colspan="5" class="text-center py-8 font-bold text-slate-500">Loading live data from Neon... ⏳</td></tr>';
+
+    fetch('/api/get-documents')
+    .then(res => res.json())
+    .then(data => {
+        if(data.success) {
+            const docs = data.data;
+            tableBody.innerHTML = '';
+            let totalRevenue = 0;
+
+            if(docs.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="5" class="text-center py-8 font-bold text-slate-400">No documents archived yet.</td></tr>';
+            }
+
+            docs.forEach(doc => {
+                // Strip commas and calculate true number for revenue card
+                const amt = parseFloat(String(doc.total_amount).replace(/,/g, '')) || 0;
+                totalRevenue += amt;
+
+                tableBody.innerHTML += `
+                    <tr class="hover:bg-slate-50 transition-all cursor-pointer">
+                        <td class="py-4 px-6 font-bold text-slate-900">${doc.ref_no}</td>
+                        <td class="py-4 px-6 text-slate-500 uppercase text-xs font-black tracking-wider">${doc.doc_type}</td>
+                        <td class="py-4 px-6 font-medium text-slate-700">${doc.client_name}</td>
+                        <td class="py-4 px-6 text-slate-500">${doc.representative || '-'}</td>
+                        <td class="py-4 px-6 text-right font-black text-blue-700">ZMW ${amt.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                    </tr>
+                `;
+            });
+
+            document.getElementById('dash-total-rev').innerText = `ZMW ${totalRevenue.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+            document.getElementById('dash-total-docs').innerText = docs.length;
+        }
+    })
+    .catch(() => {
+        tableBody.innerHTML = '<tr><td colspan="5" class="text-center py-8 font-bold text-red-500">Network Error. Could not load database. 🔴</td></tr>';
+    });
 }
 
 window.onload = () => {
