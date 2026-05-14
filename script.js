@@ -1,7 +1,8 @@
 let currentRefNumber = 1100;
 let curDocType = 'Quotation';
-let taxRate = 0; // Changed this to default to 0%
-let globalSignature = null;
+let taxRate = 0;
+let globalSignature = null; 
+
 // --- SLEEK NOTIFICATION ENGINE ---
 function showNotification(message) {
     const existing = document.getElementById('erp-toast');
@@ -50,9 +51,14 @@ function adjustMobileScale() {
     }
 }
 
-// --- DOCUMENT LOGIC ---
+// --- DOCUMENT LOGIC & TOGGLES ---
 function updateDocNumber() {
-    const prefix = curDocType === 'Quotation' ? 'QT' : curDocType === 'Delivery Note' ? 'DN' : 'INV';
+    // Determine the abbreviation for the reference number
+    let prefix = 'INV';
+    if(curDocType === 'Quotation') prefix = 'QT';
+    if(curDocType === 'Delivery Note') prefix = 'DN';
+    if(curDocType === 'Deal Recap') prefix = 'DR'; // Deal Recap uses DR
+
     const finalRef = `VEL-${prefix}-${currentRefNumber}`;
     document.getElementById('docNum').value = finalRef;
     document.getElementById('pRef').innerText = "REF: " + finalRef;
@@ -66,7 +72,27 @@ function setDoc(type, btn) {
     document.getElementById('editTitle').innerText = type;
     updateDocNumber();
     
-    // Safely force-close the menu on mobile
+    // UI TOGGLE: Switch between Invoice layout and Deal Recap layout
+    if (type === 'Deal Recap') {
+        document.getElementById('standard-builder').classList.add('hidden');
+        document.getElementById('standard-paper').classList.add('hidden');
+        document.getElementById('authByBlock').classList.add('hidden');
+        
+        document.getElementById('recap-builder').classList.remove('hidden');
+        document.getElementById('recap-paper').classList.remove('hidden');
+        document.getElementById('dr-subtitle').classList.remove('hidden');
+        document.getElementById('buyer-sig-block').classList.remove('hidden');
+    } else {
+        document.getElementById('standard-builder').classList.remove('hidden');
+        document.getElementById('standard-paper').classList.remove('hidden');
+        document.getElementById('authByBlock').classList.remove('hidden');
+        
+        document.getElementById('recap-builder').classList.add('hidden');
+        document.getElementById('recap-paper').classList.add('hidden');
+        document.getElementById('dr-subtitle').classList.add('hidden');
+        document.getElementById('buyer-sig-block').classList.add('hidden');
+    }
+
     if(window.innerWidth < 1024) {
         document.getElementById('sidebar').classList.remove('open');
         document.getElementById('overlay').classList.remove('open');
@@ -82,7 +108,7 @@ function handleSignature(event) {
     reader.onload = function() {
         sigImg.src = reader.result;
         sigImg.classList.remove('hidden');
-        globalSignature = reader.result; // Hold in memory
+        globalSignature = reader.result; 
         showNotification("Signature Ready. Click Save to Sync.");
     };
     if(event.target.files[0]) reader.readAsDataURL(event.target.files[0]);
@@ -128,12 +154,9 @@ function applySettings() {
     .then(data => {
         if(data.success && data.data) {
             const config = data.data;
-            
-            // Safely parse tax. If it's empty, make it 0.
             const savedTax = (config.tax_rate !== undefined && config.tax_rate !== null && config.tax_rate !== '') ? parseFloat(config.tax_rate) : 0;
             taxRate = savedTax / 100;
             
-            // Populate Inputs
             document.getElementById('set-tpin').value = config.tpin || '';
             document.getElementById('set-tax').value = config.tax_rate || '';
             document.getElementById('set-acc-name').value = config.account_name || '';
@@ -145,13 +168,11 @@ function applySettings() {
             document.getElementById('set-sort').value = config.sort_code || '';
             document.getElementById('set-currency').value = config.currency || '';
             
-            // Populate Display on Paper
             document.getElementById('pVatRate').innerText = savedTax;
             document.getElementById('pHeaderDetails').innerHTML = `TPIN: ${config.tpin || ''} <br> #256, 2341/M/1 MUSIKILI ROAD, LUSAKA, ZAMBIA`;
             
-            // Build the professional two-line Bank String
-            const bankLine1 = `<span class="font-bold text-slate-700">Bank:</span> ${config.bank_name || ''} &nbsp;|&nbsp; <span class="font-bold text-slate-700">Acc Name:</span> ${config.account_name || ''} &nbsp;|&nbsp; <span class="font-bold text-slate-700">Acc No:</span> ${config.account_number || ''}`;
-            const bankLine2 = `<span class="font-bold text-slate-700">Branch:</span> ${config.branch_name || ''} (${config.branch_code || ''}) &nbsp;|&nbsp; <span class="font-bold text-slate-700">Swift:</span> ${config.swift_code || ''} &nbsp;|&nbsp; <span class="font-bold text-slate-700">Sort:</span> ${config.sort_code || ''} &nbsp;|&nbsp; <span class="font-bold text-slate-700">Curr:</span> ${config.currency || ''}`;
+            const bankLine1 = `<span class="font-bold text-slate-800">Bank:</span> ${config.bank_name || ''} &nbsp;|&nbsp; <span class="font-bold text-slate-800">Acc Name:</span> ${config.account_name || ''} &nbsp;|&nbsp; <span class="font-bold text-slate-800">Acc No:</span> ${config.account_number || ''}`;
+            const bankLine2 = `<span class="font-bold text-slate-800">Branch:</span> ${config.branch_name || ''} (${config.branch_code || ''}) &nbsp;|&nbsp; <span class="font-bold text-slate-800">Swift:</span> ${config.swift_code || ''} &nbsp;|&nbsp; <span class="font-bold text-slate-800">Sort:</span> ${config.sort_code || ''} &nbsp;|&nbsp; <span class="font-bold text-slate-800">Curr:</span> ${config.currency || ''}`;
             
             document.getElementById('pFooterInfo').innerHTML = `${bankLine1}<br>${bankLine2}`;
             
@@ -161,11 +182,12 @@ function applySettings() {
                 sigImg.src = config.signature;
                 sigImg.classList.remove('hidden');
             }
-            sync(); // Recalculate totals with the true tax rate
+            sync(); 
         }
     })
     .catch(err => console.log("Could not load cloud settings yet."));
 }
+
 // --- CLOUD SYNC: ARCHIVE DOCUMENT ---
 function saveToNeon() {
     showNotification("Syncing to Neon Database...");
@@ -225,29 +247,54 @@ function addRow() {
 }
 
 function sync() {
-    document.getElementById('pName').innerText = document.getElementById('clientName').value || 'Client Name';
+    // 1. Sync Shared Fields
+    const clientName = document.getElementById('clientName').value || 'Client Name';
+    document.getElementById('pName').innerText = clientName;
     document.getElementById('pAddr').innerText = document.getElementById('address').value;
     document.getElementById('pDate').innerText = document.getElementById('docDate').value || new Date().toLocaleDateString('en-ZM');
     document.getElementById('pSales').innerText = document.getElementById('salesRep').value;
 
-    const rows = document.querySelectorAll('.item-row');
-    const tableBody = document.getElementById('pTable');
-    tableBody.innerHTML = '';
-    let sub = 0;
+    // 2. Sync Standard Invoice Logic
+    if (curDocType !== 'Deal Recap') {
+        const rows = document.querySelectorAll('.item-row');
+        const tableBody = document.getElementById('pTable');
+        tableBody.innerHTML = '';
+        let sub = 0;
 
-    rows.forEach(r => {
-        const d = r.querySelector('.i-desc').value;
-        const q = parseFloat(r.querySelector('.i-qty').value) || 0;
-        const p = parseFloat(r.querySelector('.i-price').value) || 0;
-        const total = q * p;
-        sub += total;
-        if(d) tableBody.innerHTML += `<tr><td class="py-4 px-6 uppercase">${d}</td><td class="text-center font-bold text-slate-600">${q}</td><td class="text-right">ZMW ${p.toLocaleString()}</td><td class="text-right font-black">ZMW ${total.toLocaleString()}</td></tr>`;
-    });
+        rows.forEach(r => {
+            const d = r.querySelector('.i-desc').value;
+            const q = parseFloat(r.querySelector('.i-qty').value) || 0;
+            const p = parseFloat(r.querySelector('.i-price').value) || 0;
+            const total = q * p;
+            sub += total;
+            if(d) tableBody.innerHTML += `<tr><td class="py-4 px-6 uppercase">${d}</td><td class="text-center font-bold text-slate-600">${q}</td><td class="text-right">ZMW ${p.toLocaleString()}</td><td class="text-right font-black">ZMW ${total.toLocaleString()}</td></tr>`;
+        });
 
-    const vat = sub * taxRate;
-    document.getElementById('pSub').innerText = "ZMW " + sub.toLocaleString(undefined, {minimumFractionDigits: 2});
-    document.getElementById('pVat').innerText = "ZMW " + vat.toLocaleString(undefined, {minimumFractionDigits: 2});
-    document.getElementById('pTotal').innerText = "ZMW " + (sub + vat).toLocaleString(undefined, {minimumFractionDigits: 2});
+        const vat = sub * taxRate;
+        document.getElementById('pSub').innerText = "ZMW " + sub.toLocaleString(undefined, {minimumFractionDigits: 2});
+        document.getElementById('pVat').innerText = "ZMW " + vat.toLocaleString(undefined, {minimumFractionDigits: 2});
+        document.getElementById('pTotal').innerText = "ZMW " + (sub + vat).toLocaleString(undefined, {minimumFractionDigits: 2});
+    }
+
+    // 3. Sync Deal Recap Logic
+    if (curDocType === 'Deal Recap') {
+        const product = document.getElementById('dr-product').value || '_______';
+        const qty = document.getElementById('dr-qty').value || '_______';
+        
+        // Build the dynamic subtitle
+        document.getElementById('dr-subtitle').innerText = `Deal Recap for Sale of ${qty} litres of ${product} to ${clientName}`;
+        
+        // Map all 17 inputs directly to the table cells
+        const drFields = ['product', 'qty', 'price', 'vat', 'storage', 'marking', 'srf', 'erb', 'window', 'delivery', 'quality', 'qtydet', 'transfer', 'payment', 'laytime', 'inspection', 'others'];
+        
+        drFields.forEach(field => {
+            const val = document.getElementById(`dr-${field}`).value;
+            document.getElementById(`p-dr-${field}`).innerText = val ? val : '-';
+        });
+
+        // The buyer name is mirrored in the table
+        document.getElementById('p-dr-buyer').innerText = clientName;
+    }
 }
 
 function finalSave() {
@@ -290,7 +337,6 @@ function switchView(view, btn) {
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
     if(btn) btn.classList.add('active');
 
-    // Safely force-close the menu on mobile
     if(window.innerWidth < 1024) {
         document.getElementById('sidebar').classList.remove('open');
         document.getElementById('overlay').classList.remove('open');
