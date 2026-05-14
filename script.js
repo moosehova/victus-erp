@@ -379,11 +379,12 @@ function switchView(view, btn) {
     } else if (view === 'settings') {
         settings.classList.remove('hidden');
         preview.classList.remove('hidden');
-        setTimeout(adjustMobileScale, 50); // FIX: Recalculate paper scale
+        loadProductSettings(); // Fetches live catalog pricing
+        setTimeout(adjustMobileScale, 50); 
     } else {
         editor.classList.remove('hidden');
         preview.classList.remove('hidden');
-        setTimeout(adjustMobileScale, 50); // FIX: Recalculate paper scale
+        setTimeout(adjustMobileScale, 50); 
     }
 
     // Handle active button styles
@@ -396,7 +397,6 @@ function switchView(view, btn) {
         document.getElementById('overlay').classList.remove('open');
     }
 }
-
 // --- DASHBOARD DATA ENGINE ---
 let dashboardDocs = []; // Global array for search filtering
 let revChart = null; // Global chart instance
@@ -620,6 +620,62 @@ function autoFillProduct() {
         document.getElementById('dr-erb').value = prod.erb || '';
         sync(); // Update the paper instantly
     }
+}
+// --- CATALOG SETTINGS ENGINE ---
+function loadProductSettings() {
+    const container = document.getElementById('settings-products-list');
+    container.innerHTML = '<p class="text-xs text-slate-500 font-bold text-center py-4">Loading catalog...</p>';
+
+    fetch('/api/get-products')
+    .then(res => res.json())
+    .then(data => {
+        if(data.success && data.data.length > 0) {
+            container.innerHTML = '';
+            data.data.forEach((prod, index) => {
+                container.innerHTML += `
+                    <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl relative">
+                        <h4 class="font-black text-sm text-slate-800 mb-3 uppercase">${prod.name}</h4>
+                        <div class="grid grid-cols-3 gap-2 mb-3">
+                            <div><label class="text-[9px] font-bold text-slate-500 uppercase">Base Price</label><input type="text" id="edit-price-${index}" value="${prod.base_price || ''}" class="input-box text-xs py-2 px-3"></div>
+                            <div><label class="text-[9px] font-bold text-slate-500 uppercase">ERB Fee</label><input type="text" id="edit-erb-${index}" value="${prod.erb || ''}" class="input-box text-xs py-2 px-3"></div>
+                            <div><label class="text-[9px] font-bold text-slate-500 uppercase">Storage</label><input type="text" id="edit-storage-${index}" value="${prod.storage_cost || ''}" class="input-box text-xs py-2 px-3"></div>
+                            <div><label class="text-[9px] font-bold text-slate-500 uppercase">Marking</label><input type="text" id="edit-marking-${index}" value="${prod.marking_fee || ''}" class="input-box text-xs py-2 px-3"></div>
+                            <div><label class="text-[9px] font-bold text-slate-500 uppercase">SRF</label><input type="text" id="edit-srf-${index}" value="${prod.srf || ''}" class="input-box text-xs py-2 px-3"></div>
+                        </div>
+                        <button onclick="saveProductPrice('${prod.name}', ${index})" class="w-full bg-white border-2 border-orange-200 hover:border-orange-500 text-orange-600 font-black text-xs py-2 rounded-xl transition-colors tracking-widest uppercase shadow-sm">Update Rates</button>
+                    </div>
+                `;
+            });
+        }
+    })
+    .catch(() => container.innerHTML = '<p class="text-xs text-red-500">Error loading catalog.</p>');
+}
+
+function saveProductPrice(name, index) {
+    const updatedData = {
+        name: name,
+        base_price: document.getElementById(`edit-price-${index}`).value,
+        erb: document.getElementById(`edit-erb-${index}`).value,
+        storage_cost: document.getElementById(`edit-storage-${index}`).value,
+        marking_fee: document.getElementById(`edit-marking-${index}`).value,
+        srf: document.getElementById(`edit-srf-${index}`).value
+    };
+
+    fetch('/api/update-product', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedData)
+    })
+    .then(async (res) => {
+        const response = await res.json();
+        if (res.ok && response.success) {
+            showNotification(`${name} Pricing Updated 🟢`);
+            loadProducts(); // Refresh the Deal Recap dropdown memory silently
+        } else {
+            showNotification("Pricing Update Failed 🔴");
+        }
+    })
+    .catch(() => showNotification("Network Error 🔴"));
 }
 
 function autoFillClient() {
