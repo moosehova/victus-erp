@@ -544,9 +544,30 @@ function renderChart(docs) {
 }
 
 function toggleStatus(id, currentStatus) {
-    // Note: To make this permanent, we need an api/update-status.js route.
-    // For now, this is a placeholder UI toggle.
-    alert(`In the future, clicking this will change status from ${currentStatus} to PAID/SENT.`);
+    // 1. Determine the next status in the cycle
+    let nextStatus = 'SENT';
+    if (currentStatus === 'SENT') nextStatus = 'PAID';
+    if (currentStatus === 'PAID') nextStatus = 'DRAFT';
+
+    showNotification(`Updating status to ${nextStatus}...`);
+
+    // 2. Send the update to your Vercel API and Neon Database
+    fetch('/api/update-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: id, newStatus: nextStatus })
+    })
+    .then(async (res) => {
+        const response = await res.json();
+        if (res.ok && response.success) {
+            showNotification(`Status updated to ${nextStatus} 🟢`);
+            // 3. Silently reload the dashboard to show the new badge colors
+            loadDashboard(); 
+        } else {
+            showNotification("Status Update Failed 🔴");
+        }
+    })
+    .catch(() => showNotification("Network Error 🔴"));
 }
 
 // --- CRM AUTO-FILL ENGINE ---
