@@ -189,18 +189,47 @@ function applySettings() {
 }
 
 // --- CLOUD SYNC: ARCHIVE DOCUMENT ---
+// --- CLOUD SYNC: ARCHIVE DOCUMENT ---
 function saveToNeon() {
     showNotification("Syncing to Neon Database...");
 
-    const itemsArray = [];
-    document.querySelectorAll('.item-row').forEach(row => {
-        itemsArray.push({
-            description: row.querySelector('.i-desc').value,
-            qty: row.querySelector('.i-qty').value,
-            price: row.querySelector('.i-price').value
-        });
-    });
+    let itemsArray = [];
+    let contractDetails = null;
 
+    // 1. Gather Data based on Document Type
+    if (curDocType === 'Deal Recap') {
+        // Grab all 17 contract fields
+        contractDetails = {
+            product: document.getElementById('dr-product').value,
+            qty: document.getElementById('dr-qty').value,
+            price: document.getElementById('dr-price').value,
+            vat: document.getElementById('dr-vat').value,
+            storage: document.getElementById('dr-storage').value,
+            marking: document.getElementById('dr-marking').value,
+            srf: document.getElementById('dr-srf').value,
+            erb: document.getElementById('dr-erb').value,
+            window: document.getElementById('dr-window').value,
+            delivery: document.getElementById('dr-delivery').value,
+            quality: document.getElementById('dr-quality').value,
+            qtydet: document.getElementById('dr-qtydet').value,
+            transfer: document.getElementById('dr-transfer').value,
+            payment: document.getElementById('dr-payment').value,
+            laytime: document.getElementById('dr-laytime').value,
+            inspection: document.getElementById('dr-inspection').value,
+            others: document.getElementById('dr-others').value
+        };
+    } else {
+        // Grab standard invoice line items
+        document.querySelectorAll('.item-row').forEach(row => {
+            itemsArray.push({
+                description: row.querySelector('.i-desc').value,
+                qty: row.querySelector('.i-qty').value,
+                price: row.querySelector('.i-price').value
+            });
+        });
+    }
+
+    // 2. Build the final payload
     const docData = {
         ref_no: document.getElementById('docNum').value,
         doc_type: curDocType,
@@ -208,9 +237,11 @@ function saveToNeon() {
         address: document.getElementById('address').value || 'None',
         representative: document.getElementById('salesRep').value || 'Lungowe Lutangu',
         items: itemsArray,
-        total_amount: document.getElementById('pTotal').innerText.replace('ZMW ', '')
+        total_amount: document.getElementById('pTotal').innerText.replace('ZMW ', ''),
+        contract_details: contractDetails
     };
 
+    // 3. Send to API
     fetch('/api/save-to-neon', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
