@@ -437,6 +437,10 @@ window.onload = () => {
     updateDocNumber();
     addRow();
     setTimeout(adjustMobileScale, 100); 
+
+    // Set Dashboard as the default Home Screen
+    const dashBtn = document.querySelector('button[onclick*="dashboard"]');
+    switchView('dashboard', dashBtn);
 };
 
 window.onresize = adjustMobileScale;
