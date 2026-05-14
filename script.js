@@ -398,45 +398,155 @@ function switchView(view, btn) {
 }
 
 // --- DASHBOARD DATA ENGINE ---
+let dashboardDocs = []; // Global array for search filtering
+let revChart = null; // Global chart instance
+
 function loadDashboard() {
     const tableBody = document.getElementById('dash-table-body');
-    tableBody.innerHTML = '<tr><td colspan="5" class="text-center py-8 font-bold text-slate-500">Loading live data from Neon... ⏳</td></tr>';
+    tableBody.innerHTML = '<tr><td colspan="6" class="text-center py-8 font-bold text-slate-500">Loading live data from Neon... ⏳</td></tr>';
 
     fetch('/api/get-documents')
     .then(res => res.json())
     .then(data => {
         if(data.success) {
-            const docs = data.data;
-            tableBody.innerHTML = '';
-            let totalRevenue = 0;
-
-            if(docs.length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="5" class="text-center py-8 font-bold text-slate-400">No documents archived yet.</td></tr>';
-            }
-
-            docs.forEach(doc => {
-                // Strip commas and calculate true number for revenue card
-                const amt = parseFloat(String(doc.total_amount).replace(/,/g, '')) || 0;
-                totalRevenue += amt;
-
-                tableBody.innerHTML += `
-                    <tr class="hover:bg-slate-50 transition-all cursor-pointer">
-                        <td class="py-4 px-6 font-bold text-slate-900">${doc.ref_no}</td>
-                        <td class="py-4 px-6 text-slate-500 uppercase text-xs font-black tracking-wider">${doc.doc_type}</td>
-                        <td class="py-4 px-6 font-medium text-slate-700">${doc.client_name}</td>
-                        <td class="py-4 px-6 text-slate-500">${doc.representative || '-'}</td>
-                        <td class="py-4 px-6 text-right font-black text-blue-700">ZMW ${amt.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
-                    </tr>
-                `;
-            });
-
-            document.getElementById('dash-total-rev').innerText = `ZMW ${totalRevenue.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
-            document.getElementById('dash-total-docs').innerText = docs.length;
+            dashboardDocs = data.data; // Save for filtering
+            renderDashboardTable(dashboardDocs);
+            renderChart(dashboardDocs);
         }
     })
     .catch(() => {
-        tableBody.innerHTML = '<tr><td colspan="5" class="text-center py-8 font-bold text-red-500">Network Error. Could not load database. 🔴</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="6" class="text-center py-8 font-bold text-red-500">Network Error. Could not load database. 🔴</td></tr>';
     });
+}
+
+function renderDashboardTable(docs) {
+    const tableBody = document.getElementById('dash-table-body');
+    tableBody.innerHTML = '';
+    let totalRevenue = 0;
+
+    if(docs.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="6" class="text-center py-8 font-bold text-slate-400">No documents found.</td></tr>';
+        document.getElementById('dash-total-rev').innerText = 'ZMW 0.00';
+        document.getElementById('dash-total-docs').innerText = '0';
+        return;
+    }
+
+    docs.forEach(doc => {
+        const amt = parseFloat(String(doc.total_amount).replace(/,/g, '')) || 0;
+        totalRevenue += amt;
+
+        // Status Badge Styling
+        let statusBadge = `<span class="bg-slate-100 text-slate-600 px-2 py-1 rounded-md text-[10px] font-black tracking-wider cursor-pointer" onclick="toggleStatus(${doc.id}, '${doc.status || 'DRAFT'}')">${doc.status || 'DRAFT'}</span>`;
+        if(doc.status === 'PAID') statusBadge = `<span class="bg-green-100 text-green-700 px-2 py-1 rounded-md text-[10px] font-black tracking-wider cursor-pointer" onclick="toggleStatus(${doc.id}, 'PAID')">PAID</span>`;
+        if(doc.status === 'SENT') statusBadge = `<span class="bg-yellow-100 text-yellow-700 px-2 py-1 rounded-md text-[10px] font-black tracking-wider cursor-pointer" onclick="toggleStatus(${doc.id}, 'SENT')">SENT</span>`;
+
+        // JSON dump for the Clone button
+        const docJson = encodeURIComponent(JSON.stringify(doc));
+
+        tableBody.innerHTML += `
+            <tr class="hover:bg-slate-50 transition-all">
+                <td class="py-4 px-6 font-bold text-slate-900">${doc.ref_no}</td>
+                <td class="py-4 px-6 text-slate-500 uppercase text-xs font-black tracking-wider">${doc.doc_type}</td>
+                <td class="py-4 px-6 font-medium text-slate-700">${doc.client_name}</td>
+                <td class="py-4 px-6">${statusBadge}</td>
+                <td class="py-4 px-6 text-right font-black text-blue-700">ZMW ${amt.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                <td class="py-4 px-6 text-center">
+                    <button onclick="cloneDoc('${docJson}')" class="text-xs bg-slate-900 text-white px-3 py-1.5 rounded-lg font-bold hover:bg-blue-600 transition-colors">Clone</button>
+                </td>
+            </tr>
+        `;
+    });
+
+    document.getElementById('dash-total-rev').innerText = `ZMW ${totalRevenue.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+    document.getElementById('dash-total-docs').innerText = docs.length;
+}
+
+function filterDashboard() {
+    const term = document.getElementById('dashSearch').value.toLowerCase();
+    const filtered = dashboardDocs.filter(d => 
+        (d.ref_no && d.ref_no.toLowerCase().includes(term)) ||
+        (d.client_name && d.client_name.toLowerCase().includes(term)) ||
+        (d.doc_type && d.doc_type.toLowerCase().includes(term))
+    );
+    renderDashboardTable(filtered);
+}
+
+function cloneDoc(encodedJson) {
+    const doc = JSON.parse(decodeURIComponent(encodedJson));
+    
+    // Switch to editor
+    const editorBtn = document.querySelector(`button[onclick*="setDoc('${doc.doc_type}'"]`) || document.querySelector('.nav-btn');
+    switchView('editor', editorBtn);
+    setDoc(doc.doc_type, editorBtn);
+
+    // Auto-fill client
+    document.getElementById('clientName').value = doc.client_name;
+    document.getElementById('address').value = doc.address;
+    
+    // Clear existing items and clone them
+    document.getElementById('itemList').innerHTML = '';
+    if(doc.items && Array.isArray(doc.items)) {
+        doc.items.forEach(item => {
+            addRow();
+            const rows = document.querySelectorAll('.item-row');
+            const lastRow = rows[rows.length - 1];
+            lastRow.querySelector('.i-desc').value = item.description || '';
+            lastRow.querySelector('.i-qty').value = item.qty || 0;
+            lastRow.querySelector('.i-price').value = item.price || 0;
+        });
+    }
+
+    // Auto-fill contract details if it's a Deal Recap
+    if(doc.doc_type === 'Deal Recap' && doc.contract_details) {
+        Object.keys(doc.contract_details).forEach(key => {
+            const el = document.getElementById(`dr-${key}`);
+            if(el) el.value = doc.contract_details[key];
+        });
+    }
+
+    // Give it today's date
+    document.getElementById('docDate').value = new Date().toISOString().split('T')[0];
+    
+    showNotification(`Cloned ${doc.doc_type} for ${doc.client_name}`);
+    sync();
+}
+
+function renderChart(docs) {
+    const ctx = document.getElementById('revenueChart').getContext('2d');
+    if(revChart) revChart.destroy(); // Clear old chart
+    
+    // For now, we'll just plot the last 10 documents as a visual representation
+    const recentDocs = [...docs].reverse().slice(-10);
+    const labels = recentDocs.map(d => d.ref_no.split('-')[2] || d.ref_no);
+    const data = recentDocs.map(d => parseFloat(String(d.total_amount).replace(/,/g, '')) || 0);
+
+    revChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Revenue (ZMW)',
+                data: data,
+                borderColor: '#2563EB',
+                backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { x: { display: false }, y: { beginAtZero: true } }
+        }
+    });
+}
+
+function toggleStatus(id, currentStatus) {
+    // Note: To make this permanent, we need an api/update-status.js route.
+    // For now, this is a placeholder UI toggle.
+    alert(`In the future, clicking this will change status from ${currentStatus} to PAID/SENT.`);
 }
 
 // --- CRM AUTO-FILL ENGINE ---
