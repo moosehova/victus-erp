@@ -165,6 +165,7 @@ async function saveSettings() {
     }
 }
 
+// --- DYNAMIC SETTINGS SYNC ---
 function applySettings() {
     fetch('/api/settings')
     .then(res => res.json())
@@ -177,24 +178,21 @@ function applySettings() {
             // Fill Settings Form
             document.getElementById('set-tpin').value = config.tpin || '';
             document.getElementById('set-tax').value = config.tax_rate || '';
-            document.getElementById('set-acc-name').value = config.account_name || 'Victus Energy Limited';
-            document.getElementById('set-bank').value = config.bank_name || 'Absa Bank';
-            document.getElementById('set-account').value = config.account_number || '2219308';
-            document.getElementById('set-branch').value = config.branch_name || 'Lusaka Business Centre';
-            document.getElementById('set-branch-code').value = config.branch_code || '016';
-            document.getElementById('set-swift').value = config.swift_code || 'BARCZMLX';
-            document.getElementById('set-sort').value = config.sort_code || '020016';
-            document.getElementById('set-currency').value = config.currency || 'ZMW';
+            document.getElementById('set-acc-name').value = config.account_name || '';
+            document.getElementById('set-bank').value = config.bank_name || '';
+            document.getElementById('set-account').value = config.account_number || '';
+            document.getElementById('set-branch').value = config.branch_name || '';
+            document.getElementById('set-branch-code').value = config.branch_code || '';
+            document.getElementById('set-swift').value = config.swift_code || '';
+            document.getElementById('set-sort').value = config.sort_code || '';
+            document.getElementById('set-currency').value = config.currency || '';
             
-            // Update Preview Header
+            // Update Preview Header & Footer dynamically (No hardcoding)
             document.getElementById('pVatRate').innerText = savedTax;
-            document.getElementById('pHeaderDetails').innerHTML = `TPIN: ${config.tpin || '1002345678'} <br> #256, 2341/M/1 MUSIKILI ROAD, LUSAKA, ZAMBIA`;
-            
-            // Update Preview Footer (Professional Banking Layout)
-            const bankLine1 = `<span class="font-bold text-slate-800">Bank:</span> ${config.bank_name || 'Absa Bank'} &nbsp;|&nbsp; <span class="font-bold text-slate-800">Acc Name:</span> ${config.account_name || 'Victus Energy Limited'} &nbsp;|&nbsp; <span class="font-bold text-slate-800">Acc No:</span> ${config.account_number || '2219308'}`;
-            const bankLine2 = `<span class="font-bold text-slate-800">Branch:</span> ${config.branch_name || 'Lusaka Business Centre'} (${config.branch_code || '016'}) &nbsp;|&nbsp; <span class="font-bold text-slate-800">Swift:</span> ${config.swift_code || 'BARCZMLX'} &nbsp;|&nbsp; <span class="font-bold text-slate-800">Sort:</span> ${config.sort_code || '020016'}`;
-            
-            document.getElementById('pFooterInfo').innerHTML = `${bankLine1}<br>${bankLine2}`;
+            document.getElementById('p-set-tpin').innerText = config.tpin || '-';
+            document.getElementById('p-set-acc-name').innerText = config.account_name || '-';
+            document.getElementById('p-set-bank').innerText = config.bank_name || '-';
+            document.getElementById('p-set-account').innerText = config.account_number || '-';
             
             // Signature handling
             if (config.signature && config.signature !== 'null') {
@@ -206,34 +204,22 @@ function applySettings() {
             sync(); 
         }
     })
-    .catch(err => console.log("Could not load cloud settings yet."));
+    .catch(err => console.log("Waiting for cloud sync..."));
 }
 
-function saveToNeon() {
+// --- CLEAN NEON ARCHIVE ---
+async function saveToNeon() {
     showNotification("Syncing to Neon Database...");
     let itemsArray = [];
     let contractDetails = null;
 
     if (curDocType === 'Deal Recap') {
-        contractDetails = {
-            product: document.getElementById('dr-product').value,
-            qty: document.getElementById('dr-qty').value,
-            price: document.getElementById('dr-price').value,
-            vat: document.getElementById('dr-vat').value,
-            storage: document.getElementById('dr-storage').value,
-            marking: document.getElementById('dr-marking').value,
-            srf: document.getElementById('dr-srf').value,
-            erb: document.getElementById('dr-erb').value,
-            window: document.getElementById('dr-window').value,
-            delivery: document.getElementById('dr-delivery').value,
-            quality: document.getElementById('dr-quality').value,
-            qtydet: document.getElementById('dr-qtydet').value,
-            transfer: document.getElementById('dr-transfer').value,
-            payment: document.getElementById('dr-payment').value,
-            laytime: document.getElementById('dr-laytime').value,
-            inspection: document.getElementById('dr-inspection').value,
-            others: document.getElementById('dr-others').value
-        };
+        const fields = ['product', 'qty', 'price', 'vat', 'storage', 'marking', 'srf', 'erb', 'window', 'delivery', 'quality', 'qtydet', 'transfer', 'payment', 'laytime', 'inspection', 'others'];
+        contractDetails = {};
+        fields.forEach(f => {
+            const el = document.getElementById(`dr-${f}`);
+            contractDetails[f] = el ? el.value : '';
+        });
     } else {
         document.querySelectorAll('.item-row').forEach(row => {
             itemsArray.push({
@@ -244,33 +230,37 @@ function saveToNeon() {
         });
     }
 
+    // Clean total amount: Remove 'ZMW' and commas for DB numeric safety
+    const rawTotal = document.getElementById('pTotal').innerText
+        .replace('ZMW ', '')
+        .replace(/,/g, '');
+
     const docData = {
         ref_no: document.getElementById('docNum').value,
         doc_type: curDocType,
         client_name: document.getElementById('clientName').value || 'Unknown',
-        address: document.getElementById('address').value || 'None',
-        representative: document.getElementById('salesRep').value || 'Lungowe Lutangu',
         items: itemsArray,
-        total_amount: document.getElementById('pTotal').innerText.replace('ZMW ', ''),
+        total_amount: parseFloat(rawTotal) || 0,
         contract_details: contractDetails
     };
 
-    fetch('/api/save-to-neon', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(docData)
-    })
-    .then(async (res) => {
+    try {
+        const res = await fetch('/api/save-to-neon', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(docData)
+        });
         const response = await res.json();
-        if (res.ok && response.success) {
+        if (response.success) {
             showNotification("Document Archived to Neon 🟢");
             currentRefNumber++;
             updateDocNumber();
         } else {
             showNotification("Archive Failed 🔴");
         }
-    })
-    .catch(() => showNotification("Network Error 🔴"));
+    } catch (err) {
+        showNotification("Network Error: Check Connection 🔴");
+    }
 }
 
 function addRow() {
