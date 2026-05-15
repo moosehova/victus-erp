@@ -17,7 +17,7 @@ function showNotification(message) {
     const toast = document.createElement('div');
     toast.id = 'erp-toast';
     toast.className = 'fixed top-10 left-1/2 transform -translate-x-1/2 bg-slate-900 text-white px-8 py-4 rounded-2xl shadow-2xl z-[999] font-black tracking-wider text-xs uppercase border border-slate-700 transition-all duration-300 translate-y-[-20px] opacity-0';
-    toast.innerText = message;
+    toast.innerText = message.startsWith('Premium') ? message : `Premium • ${message}`;
     
     document.body.appendChild(toast);
 
@@ -278,14 +278,17 @@ async function saveToNeon() {
             body: JSON.stringify(docData)
         });
         const response = await res.json();
-        if (response.success) {
+        if (res.ok && response.success) {
             showNotification("Document Archived to Neon 🟢");
             currentRefNumber++;
             updateDocNumber();
         } else {
-            showNotification("Archive Failed 🔴");
+            const message = response.error || response.message || res.statusText || 'Unknown Error';
+            console.error('Archive failed:', message);
+            showNotification("Archive Failed: " + message + " 🔴");
         }
     } catch (err) {
+        console.error('Network error during archive:', err);
         showNotification("Network Error: Check Connection 🔴");
     }
 }
@@ -393,6 +396,13 @@ function switchView(view, btn) {
         preview.classList.remove('hidden');
         loadProductSettings();
         setTimeout(adjustMobileScale, 50); 
+    } else if (view === 'preview-only') {
+        editor.classList.add('hidden');
+        settings.classList.add('hidden');
+        dashboard.classList.add('hidden');
+        expenses.classList.add('hidden');
+        preview.classList.remove('hidden');
+        setTimeout(adjustMobileScale, 50);
     } else {
         editor.classList.remove('hidden');
         preview.classList.remove('hidden');
@@ -555,7 +565,47 @@ function cloneDoc(encodedJson) {
 }
 
 function viewDocument(encodedJson) {
-    cloneDoc(encodedJson);
+    const doc = JSON.parse(decodeURIComponent(encodedJson));
+
+    document.getElementById('clientName').value = doc.client_name || '';
+    document.getElementById('address').value = doc.address || '';
+    document.getElementById('salesRep').value = doc.representative || '';
+    document.getElementById('itemList').innerHTML = '';
+
+    if (doc.doc_type === 'Deal Recap') {
+        setDoc('Deal Recap', null);
+        if (doc.contract_details) {
+            Object.keys(doc.contract_details).forEach(key => {
+                const el = document.getElementById(`dr-${key}`);
+                if (el) el.value = doc.contract_details[key] || '';
+            });
+        }
+    } else {
+        setDoc(doc.doc_type, null);
+        if (doc.items && Array.isArray(doc.items) && doc.items.length > 0) {
+            doc.items.forEach(item => {
+                addRow();
+                const rows = document.querySelectorAll('.item-row');
+                const lastRow = rows[rows.length - 1];
+                lastRow.querySelector('.i-desc').value = item.description || '';
+                lastRow.querySelector('.i-qty').value = item.qty || 0;
+                lastRow.querySelector('.i-price').value = item.price || 0;
+            });
+        } else {
+            addRow();
+        }
+    }
+
+    document.getElementById('docDate').value = doc.created_at ? new Date(doc.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+    switchView('preview-only', null);
+    showNotification('Document preview opened');
+    sync();
+}
+
+function closePreview() {
+    const dashBtn = document.querySelector('button[onclick*="dashboard"]');
+    switchView('dashboard', dashBtn);
+    showNotification('Preview closed');
 }
 
 function deleteDocument(id) {

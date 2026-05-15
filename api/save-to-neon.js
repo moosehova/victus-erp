@@ -10,10 +10,32 @@ export default async function handler(req, res) {
     const data = req.body;
 
     try {
-        // Insert document into database (matching actual table structure)
+        // Insert or update document if the same ref_no already exists
         const result = await sql`
-            INSERT INTO documents (ref_no, doc_type, client_name, items, total_amount, contract_details, status, created_at)
-            VALUES (${data.ref_no}, ${data.doc_type}, ${data.client_name}, ${JSON.stringify(data.items)}, ${data.total_amount}, ${JSON.stringify(data.contract_details)}, 'DRAFT', NOW())
+            INSERT INTO documents (ref_no, doc_type, client_name, address, representative, items, total_amount, contract_details, status, created_at, updated_at)
+            VALUES (
+                ${data.ref_no},
+                ${data.doc_type},
+                ${data.client_name},
+                ${data.address},
+                ${data.representative},
+                ${JSON.stringify(data.items)},
+                ${data.total_amount},
+                ${JSON.stringify(data.contract_details)},
+                'DRAFT',
+                NOW(),
+                NOW()
+            )
+            ON CONFLICT (ref_no) DO UPDATE SET
+                doc_type = EXCLUDED.doc_type,
+                client_name = EXCLUDED.client_name,
+                address = EXCLUDED.address,
+                representative = EXCLUDED.representative,
+                items = EXCLUDED.items,
+                total_amount = EXCLUDED.total_amount,
+                contract_details = EXCLUDED.contract_details,
+                status = EXCLUDED.status,
+                updated_at = NOW()
             RETURNING id
         `;
 

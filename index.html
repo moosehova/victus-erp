@@ -270,6 +270,9 @@
         </section>
 
         <section id="previewPanel" class="w-full h-full bg-slate-100/50 p-4 lg:p-12 overflow-y-auto flex flex-col">
+            <div class="flex justify-end mb-4">
+                <button onclick="closePreview()" class="bg-slate-900 text-white px-4 py-2 rounded-full text-xs uppercase tracking-widest shadow-lg">Close Preview</button>
+            </div>
             <div id="scale-wrapper" class="relative mt-4 mb-8 mx-auto">
                 <div id="pdfArea" class="absolute top-0 left-0 bg-white shadow-2xl p-10 lg:p-16" style="width: 800px; min-height: 1131px; box-sizing: border-box;">
                     <div class="flex justify-between items-start border-b-[6px] border-slate-900 pb-10 mb-10">
