@@ -7,7 +7,8 @@ if ('serviceWorker' in navigator) {
 let currentRefNumber = 1100;
 let curDocType = 'Quotation';
 let taxRate = 0;
-let globalSignature = null; 
+let globalSignature = null;
+let deletePendingId = null;
 
 // --- SLEEK NOTIFICATION ENGINE ---
 function showNotification(message) {
@@ -609,23 +610,45 @@ function closePreview() {
 }
 
 function deleteDocument(id) {
-    if (!confirm('Delete this document from Neon? This cannot be undone.')) return;
+    deletePendingId = id;
+    const modal = document.getElementById('delete-modal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+}
+
+function closeDeleteModal() {
+    deletePendingId = null;
+    const modal = document.getElementById('delete-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+}
+
+function confirmDelete() {
+    if (!deletePendingId) return;
     showNotification('Deleting document...');
     fetch('/api/delete-document', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id })
+        body: JSON.stringify({ id: deletePendingId })
     })
     .then(async res => {
         const data = await res.json();
+        closeDeleteModal();
         if (res.ok && data.success) {
-            showNotification('Document deleted successfully 🗑️');
+            showNotification('Premium • Document deleted successfully');
             loadDashboard();
         } else {
-            showNotification('Delete failed: ' + (data.error || data.message || 'Server Error') + ' 🔴');
+            showNotification('Premium • Delete failed: ' + (data.error || data.message || 'Server Error'));
         }
     })
-    .catch(() => showNotification('Network Error: Could not delete document 🔴'));
+    .catch(() => {
+        closeDeleteModal();
+        showNotification('Premium • Network Error: Could not delete document');
+    });
 }
 
 function renderChart(docs) {
