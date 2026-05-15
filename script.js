@@ -174,25 +174,29 @@ function applySettings() {
             const savedTax = (config.tax_rate !== undefined && config.tax_rate !== null && config.tax_rate !== '') ? parseFloat(config.tax_rate) : 0;
             taxRate = savedTax / 100;
             
+            // Fill Settings Form
             document.getElementById('set-tpin').value = config.tpin || '';
             document.getElementById('set-tax').value = config.tax_rate || '';
-            document.getElementById('set-acc-name').value = config.account_name || '';
-            document.getElementById('set-bank').value = config.bank_name || '';
-            document.getElementById('set-account').value = config.account_number || '';
-            document.getElementById('set-branch').value = config.branch_name || '';
-            document.getElementById('set-branch-code').value = config.branch_code || '';
-            document.getElementById('set-swift').value = config.swift_code || '';
-            document.getElementById('set-sort').value = config.sort_code || '';
-            document.getElementById('set-currency').value = config.currency || '';
+            document.getElementById('set-acc-name').value = config.account_name || 'Victus Energy Limited';
+            document.getElementById('set-bank').value = config.bank_name || 'Absa Bank';
+            document.getElementById('set-account').value = config.account_number || '2219308';
+            document.getElementById('set-branch').value = config.branch_name || 'Lusaka Business Centre';
+            document.getElementById('set-branch-code').value = config.branch_code || '016';
+            document.getElementById('set-swift').value = config.swift_code || 'BARCZMLX';
+            document.getElementById('set-sort').value = config.sort_code || '020016';
+            document.getElementById('set-currency').value = config.currency || 'ZMW';
             
+            // Update Preview Header
             document.getElementById('pVatRate').innerText = savedTax;
-            document.getElementById('pHeaderDetails').innerHTML = `TPIN: ${config.tpin || ''} <br> #256, 2341/M/1 MUSIKILI ROAD, LUSAKA, ZAMBIA`;
+            document.getElementById('pHeaderDetails').innerHTML = `TPIN: ${config.tpin || '1002345678'} <br> #256, 2341/M/1 MUSIKILI ROAD, LUSAKA, ZAMBIA`;
             
-            const bankLine1 = `<span class="font-bold text-slate-800">Bank:</span> ${config.bank_name || ''} &nbsp;|&nbsp; <span class="font-bold text-slate-800">Acc Name:</span> ${config.account_name || ''} &nbsp;|&nbsp; <span class="font-bold text-slate-800">Acc No:</span> ${config.account_number || ''}`;
-            const bankLine2 = `<span class="font-bold text-slate-800">Branch:</span> ${config.branch_name || ''} (${config.branch_code || ''}) &nbsp;|&nbsp; <span class="font-bold text-slate-800">Swift:</span> ${config.swift_code || ''} &nbsp;|&nbsp; <span class="font-bold text-slate-800">Sort:</span> ${config.sort_code || ''} &nbsp;|&nbsp; <span class="font-bold text-slate-800">Curr:</span> ${config.currency || ''}`;
+            // Update Preview Footer (Professional Banking Layout)
+            const bankLine1 = `<span class="font-bold text-slate-800">Bank:</span> ${config.bank_name || 'Absa Bank'} &nbsp;|&nbsp; <span class="font-bold text-slate-800">Acc Name:</span> ${config.account_name || 'Victus Energy Limited'} &nbsp;|&nbsp; <span class="font-bold text-slate-800">Acc No:</span> ${config.account_number || '2219308'}`;
+            const bankLine2 = `<span class="font-bold text-slate-800">Branch:</span> ${config.branch_name || 'Lusaka Business Centre'} (${config.branch_code || '016'}) &nbsp;|&nbsp; <span class="font-bold text-slate-800">Swift:</span> ${config.swift_code || 'BARCZMLX'} &nbsp;|&nbsp; <span class="font-bold text-slate-800">Sort:</span> ${config.sort_code || '020016'}`;
             
             document.getElementById('pFooterInfo').innerHTML = `${bankLine1}<br>${bankLine2}`;
             
+            // Signature handling
             if (config.signature && config.signature !== 'null') {
                 globalSignature = config.signature;
                 const sigImg = document.getElementById('pSignature');
