@@ -264,6 +264,8 @@ async function saveToNeon() {
         ref_no: document.getElementById('docNum').value,
         doc_type: curDocType,
         client_name: document.getElementById('clientName').value || 'Unknown',
+        address: document.getElementById('address').value || '',
+        representative: document.getElementById('salesRep').value || '',
         items: itemsArray,
         total_amount: parseFloat(rawTotal) || 0,
         contract_details: contractDetails
@@ -496,8 +498,10 @@ function renderDashboardTable(docs) {
                 <td class="py-4 px-6 font-medium text-slate-700">${doc.client_name}</td>
                 <td class="py-4 px-6">${statusBadge}</td>
                 <td class="py-4 px-6 text-right font-black text-blue-700">ZMW ${amt.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
-                <td class="py-4 px-6 text-center">
+                <td class="py-4 px-6 text-center space-x-2">
+                    <button onclick="viewDocument('${docJson}')" class="text-xs bg-blue-600 text-white px-3 py-1.5 rounded-lg font-bold hover:bg-blue-500 transition-colors">View</button>
                     <button onclick="cloneDoc('${docJson}')" class="text-xs bg-slate-900 text-white px-3 py-1.5 rounded-lg font-bold hover:bg-blue-600 transition-colors">Clone</button>
+                    <button onclick="deleteDocument(${doc.id})" class="text-xs bg-red-600 text-white px-3 py-1.5 rounded-lg font-bold hover:bg-red-500 transition-colors">Delete</button>
                 </td>
             </tr>
         `;
@@ -548,6 +552,30 @@ function cloneDoc(encodedJson) {
     document.getElementById('docDate').value = new Date().toISOString().split('T')[0];
     showNotification(`Cloned ${doc.doc_type} for ${doc.client_name}`);
     sync();
+}
+
+function viewDocument(encodedJson) {
+    cloneDoc(encodedJson);
+}
+
+function deleteDocument(id) {
+    if (!confirm('Delete this document from Neon? This cannot be undone.')) return;
+    showNotification('Deleting document...');
+    fetch('/api/delete-document', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+    })
+    .then(async res => {
+        const data = await res.json();
+        if (res.ok && data.success) {
+            showNotification('Document deleted successfully 🗑️');
+            loadDashboard();
+        } else {
+            showNotification('Delete failed: ' + (data.error || data.message || 'Server Error') + ' 🔴');
+        }
+    })
+    .catch(() => showNotification('Network Error: Could not delete document 🔴'));
 }
 
 function renderChart(docs) {
