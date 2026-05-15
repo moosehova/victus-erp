@@ -128,7 +128,7 @@ function handleSignature(event) {
     if(event.target.files[0]) reader.readAsDataURL(event.target.files[0]);
 }
 
-function saveSettings() {
+async function saveSettings() {
     showNotification("Syncing Settings to Cloud...");
     
     const config = {
@@ -145,21 +145,24 @@ function saveSettings() {
         signature: globalSignature 
     };
     
-    fetch('/api/settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(config)
-    })
-    .then(async (res) => {
+    try {
+        const res = await fetch('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(config)
+        });
+        
         const data = await res.json();
+        
         if(data.success) {
             showNotification("ERP Settings Cloud Synced ☁️");
             applySettings(); 
         } else {
-            showNotification("Cloud Sync Failed 🔴");
+            showNotification("Cloud Sync Failed: " + (data.message || "Server Error") + " 🔴");
         }
-    })
-    .catch(() => showNotification("Network Error 🔴"));
+    } catch (err) {
+        showNotification("Network Error: Cannot reach API 🔴");
+    }
 }
 
 function applySettings() {
