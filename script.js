@@ -154,13 +154,15 @@ async function saveSettings() {
         
         const data = await res.json();
         
-        if(data.success) {
+        if (res.ok && data.success) {
             showNotification("ERP Settings Cloud Synced ☁️");
             applySettings(); 
         } else {
-            showNotification("Cloud Sync Failed: " + (data.message || "Server Error") + " 🔴");
+            const message = data.error || data.message || res.statusText || 'Server Error';
+            showNotification("Cloud Sync Failed: " + message + " 🔴");
         }
     } catch (err) {
+        console.error('Settings save failed:', err);
         showNotification("Network Error: Cannot reach API 🔴");
     }
 }
@@ -193,6 +195,11 @@ function applySettings() {
             document.getElementById('p-set-acc-name').innerText = config.account_name || '-';
             document.getElementById('p-set-bank').innerText = config.bank_name || '-';
             document.getElementById('p-set-account').innerText = config.account_number || '-';
+            document.getElementById('p-set-branch').innerText = config.branch_name || '-';
+            document.getElementById('p-set-branch-code').innerText = config.branch_code || '-';
+            document.getElementById('p-set-swift').innerText = config.swift_code || '-';
+            document.getElementById('p-set-sort').innerText = config.sort_code || '-';
+            document.getElementById('p-set-currency').innerText = config.currency || '-';
             
             // Signature handling
             if (config.signature && config.signature !== 'null') {
