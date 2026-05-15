@@ -131,17 +131,18 @@ function handleSignature(event) {
 async function saveSettings() {
     showNotification("Syncing Settings to Cloud...");
     
+    const getValue = id => document.getElementById(id)?.value || '';
     const config = {
-        tpin: document.getElementById('set-tpin').value,
-        tax_rate: document.getElementById('set-tax').value,
-        account_name: document.getElementById('set-acc-name').value,
-        bank_name: document.getElementById('set-bank').value,
-        account_number: document.getElementById('set-account').value,
-        branch_name: document.getElementById('set-branch').value,
-        branch_code: document.getElementById('set-branch-code').value,
-        swift_code: document.getElementById('set-swift').value,
-        sort_code: document.getElementById('set-sort').value,
-        currency: document.getElementById('set-currency').value,
+        tpin: getValue('set-tpin'),
+        tax_rate: getValue('set-tax'),
+        account_name: getValue('set-acc-name'),
+        bank_name: getValue('set-bank'),
+        account_number: getValue('set-account'),
+        branch_name: getValue('set-branch'),
+        branch_code: getValue('set-branch-code'),
+        swift_code: getValue('set-swift'),
+        sort_code: getValue('set-sort'),
+        currency: getValue('set-currency'),
         signature: globalSignature 
     };
     
@@ -183,36 +184,47 @@ function applySettings() {
             const savedTax = (config.tax_rate !== undefined && config.tax_rate !== null && config.tax_rate !== '') ? parseFloat(config.tax_rate) : 0;
             taxRate = savedTax / 100;
             
+            const setInput = (id, value) => {
+                const el = document.getElementById(id);
+                if (el) el.value = value || '';
+            };
+            const setText = (id, value) => {
+                const el = document.getElementById(id);
+                if (el) el.innerText = value;
+            };
+            
             // Fill Settings Form
-            document.getElementById('set-tpin').value = config.tpin || '';
-            document.getElementById('set-tax').value = config.tax_rate || '';
-            document.getElementById('set-acc-name').value = config.account_name || '';
-            document.getElementById('set-bank').value = config.bank_name || '';
-            document.getElementById('set-account').value = config.account_number || '';
-            document.getElementById('set-branch').value = config.branch_name || '';
-            document.getElementById('set-branch-code').value = config.branch_code || '';
-            document.getElementById('set-swift').value = config.swift_code || '';
-            document.getElementById('set-sort').value = config.sort_code || '';
-            document.getElementById('set-currency').value = config.currency || '';
+            setInput('set-tpin', config.tpin);
+            setInput('set-tax', config.tax_rate);
+            setInput('set-acc-name', config.account_name);
+            setInput('set-bank', config.bank_name);
+            setInput('set-account', config.account_number);
+            setInput('set-branch', config.branch_name);
+            setInput('set-branch-code', config.branch_code);
+            setInput('set-swift', config.swift_code);
+            setInput('set-sort', config.sort_code);
+            setInput('set-currency', config.currency);
             
             // Update Preview Header & Footer dynamically (No hardcoding)
-            document.getElementById('pVatRate').innerText = savedTax;
-            document.getElementById('p-set-tpin').innerText = config.tpin || '-';
-            document.getElementById('p-set-acc-name').innerText = config.account_name || '-';
-            document.getElementById('p-set-bank').innerText = config.bank_name || '-';
-            document.getElementById('p-set-account').innerText = config.account_number || '-';
-            document.getElementById('p-set-branch').innerText = config.branch_name || '-';
-            document.getElementById('p-set-branch-code').innerText = config.branch_code || '-';
-            document.getElementById('p-set-swift').innerText = config.swift_code || '-';
-            document.getElementById('p-set-sort').innerText = config.sort_code || '-';
-            document.getElementById('p-set-currency').innerText = config.currency || '-';
+            setText('pVatRate', savedTax);
+            setText('p-set-tpin', config.tpin || '-');
+            setText('p-set-acc-name', config.account_name || '-');
+            setText('p-set-bank', config.bank_name || '-');
+            setText('p-set-account', config.account_number || '-');
+            setText('p-set-branch', config.branch_name || '-');
+            setText('p-set-branch-code', config.branch_code || '-');
+            setText('p-set-swift', config.swift_code || '-');
+            setText('p-set-sort', config.sort_code || '-');
+            setText('p-set-currency', config.currency || '-');
             
             // Signature handling
             if (config.signature && config.signature !== 'null') {
                 globalSignature = config.signature;
                 const sigImg = document.getElementById('pSignature');
-                sigImg.src = config.signature;
-                sigImg.classList.remove('hidden');
+                if (sigImg) {
+                    sigImg.src = config.signature;
+                    sigImg.classList.remove('hidden');
+                }
             }
             sync(); 
         }
