@@ -1,69 +1,67 @@
-import { neon } from '@neondatabase/serverless';
+async function saveToNeon() {
+    showNotification("Syncing to Neon Database...");
+    let itemsArray = [];
+    let contractDetails = null;
 
-export default async function handler(req, res) {
-    if (req.method !== 'POST') {
-        return res.status(405).json({ message: 'Method Not Allowed' });
+    if (curDocType === 'Deal Recap') {
+        contractDetails = {
+            product: document.getElementById('dr-product').value,
+            qty: document.getElementById('dr-qty').value,
+            price: document.getElementById('dr-price').value,
+            vat: document.getElementById('dr-vat').value,
+            storage: document.getElementById('dr-storage').value,
+            marking: document.getElementById('dr-marking').value,
+            srf: document.getElementById('dr-srf').value,
+            erb: document.getElementById('dr-erb').value,
+            window: document.getElementById('dr-window').value,
+            delivery: document.getElementById('dr-delivery').value,
+            quality: document.getElementById('dr-quality').value,
+            qtydet: document.getElementById('dr-qtydet').value,
+            transfer: document.getElementById('dr-transfer').value,
+            payment: document.getElementById('dr-payment').value,
+            laytime: document.getElementById('dr-laytime').value,
+            inspection: document.getElementById('dr-inspection').value,
+            others: document.getElementById('dr-others').value
+        };
+    } else {
+        document.querySelectorAll('.item-row').forEach(row => {
+            itemsArray.push({
+                description: row.querySelector('.i-desc').value,
+                qty: row.querySelector('.i-qty').value,
+                price: row.querySelector('.i-price').value
+            });
+        });
     }
 
-    const sql = neon(process.env.DATABASE_URL);
-    const data = req.body;
+    const docData = {
+        ref_no: document.getElementById('docNum').value,
+        doc_type: curDocType,
+        client_name: document.getElementById('clientName').value || 'Unknown',
+        address: document.getElementById('address').value || 'None',
+        representative: document.getElementById('salesRep').value || 'Lungowe Lutangu',
+        items: itemsArray,
+        total_amount: document.getElementById('pTotal').innerText.replace('ZMW ', '').replace(/,/g, ''),
+        contract_details: contractDetails
+    };
 
     try {
-        // 1. Memorize the Client (Smart CRM)
-        if (data.client_name && data.client_name !== 'Unknown') {
-            await sql`
-                INSERT INTO clients (name, address) 
-                VALUES (${data.client_name}, ${data.address})
-                ON CONFLICT (name) DO UPDATE SET address = EXCLUDED.address
-            `;
+        const res = await fetch('/api/save-to-neon', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(docData)
+        });
+        
+        const response = await res.json();
+        
+        if (response.success) {
+            showNotification("Document Archived to Neon 🟢");
+            currentRefNumber++;
+            updateDocNumber();
+        } else {
+            showNotification("Archive Failed: " + (response.error || "Unknown Error") + " 🔴");
         }
-
-        // 2. Memorize the Product (Self-Learning Inventory)
-        if (data.doc_type === 'Deal Recap' && data.contract_details && data.contract_details.product) {
-            await sql`
-                INSERT INTO products (name, base_price, storage_cost, marking_fee, srf, erb) 
-                VALUES (
-                    ${data.contract_details.product}, 
-                    ${data.contract_details.price || ''}, 
-                    ${data.contract_details.storage || ''}, 
-                    ${data.contract_details.marking || ''}, 
-                    ${data.contract_details.srf || ''}, 
-                    ${data.contract_details.erb || ''}
-                )
-                ON CONFLICT (name) DO UPDATE SET 
-                    base_price = EXCLUDED.base_price,
-                    storage_cost = EXCLUDED.storage_cost,
-                    marking_fee = EXCLUDED.marking_fee,
-                    srf = EXCLUDED.srf,
-                    erb = EXCLUDED.erb
-            `;
-        }
-
-        // 3. Archive the Document
-        await sql`
-            INSERT INTO documents (
-                ref_no, 
-                doc_type, 
-                client_name, 
-                address, 
-                representative, 
-                items, 
-                total_amount,
-                contract_details
-            ) VALUES (
-                ${data.ref_no}, 
-                ${data.doc_type}, 
-                ${data.client_name}, 
-                ${data.address}, 
-                ${data.representative}, 
-                ${JSON.stringify(data.items || [])}, 
-                ${data.total_amount},
-                ${data.contract_details ? JSON.stringify(data.contract_details) : null}
-            )
-        `;
-        return res.status(200).json({ success: true, message: 'Document Archived & Database Updated' });
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({ success: false, error: error.message });
+    } catch (err) {
+        console.error("Neon Sync Error:", err);
+        showNotification("Network Error: Cloud Unreachable 🔴");
     }
 }
