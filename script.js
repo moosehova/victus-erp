@@ -3,6 +3,7 @@ if ('serviceWorker' in navigator) {
         console.log("Service Worker Registered");
     });
 }
+
 let currentRefNumber = 1100;
 let curDocType = 'Quotation';
 let taxRate = 0;
@@ -58,11 +59,10 @@ function adjustMobileScale() {
 
 // --- DOCUMENT LOGIC & TOGGLES ---
 function updateDocNumber() {
-    // Determine the abbreviation for the reference number
     let prefix = 'INV';
     if(curDocType === 'Quotation') prefix = 'QT';
     if(curDocType === 'Delivery Note') prefix = 'DN';
-    if(curDocType === 'Deal Recap') prefix = 'DR'; // Deal Recap uses DR
+    if(curDocType === 'Deal Recap') prefix = 'DR';
 
     const finalRef = `VEL-${prefix}-${currentRefNumber}`;
     document.getElementById('docNum').value = finalRef;
@@ -73,29 +73,38 @@ function setDoc(type, btn) {
     curDocType = type;
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
     if(btn) btn.classList.add('active');
+    
     document.getElementById('pType').innerText = type.toUpperCase();
     document.getElementById('editTitle').innerText = type;
     updateDocNumber();
     
-    // UI TOGGLE: Switch between Invoice layout and Deal Recap layout
+    // UI RESET: Handle visibility switching between Standard and Deal Recap
+    const stdBuilder = document.getElementById('standard-builder');
+    const stdPaper = document.getElementById('standard-paper');
+    const authBlock = document.getElementById('authByBlock');
+    const recapBuilder = document.getElementById('recap-builder');
+    const recapPaper = document.getElementById('recap-paper');
+    const drSubtitle = document.getElementById('dr-subtitle');
+    const buyerSig = document.getElementById('buyer-sig-block');
+
     if (type === 'Deal Recap') {
-        document.getElementById('standard-builder').classList.add('hidden');
-        document.getElementById('standard-paper').classList.add('hidden');
-        document.getElementById('authByBlock').classList.add('hidden');
+        stdBuilder.classList.add('hidden');
+        stdPaper.classList.add('hidden');
+        authBlock.classList.add('hidden');
         
-        document.getElementById('recap-builder').classList.remove('hidden');
-        document.getElementById('recap-paper').classList.remove('hidden');
-        document.getElementById('dr-subtitle').classList.remove('hidden');
-        document.getElementById('buyer-sig-block').classList.remove('hidden');
+        recapBuilder.classList.remove('hidden');
+        recapPaper.classList.remove('hidden');
+        drSubtitle.classList.remove('hidden');
+        buyerSig.classList.remove('hidden');
     } else {
-        document.getElementById('standard-builder').classList.remove('hidden');
-        document.getElementById('standard-paper').classList.remove('hidden');
-        document.getElementById('authByBlock').classList.remove('hidden');
+        stdBuilder.classList.remove('hidden');
+        stdPaper.classList.remove('hidden');
+        authBlock.classList.remove('hidden');
         
-        document.getElementById('recap-builder').classList.add('hidden');
-        document.getElementById('recap-paper').classList.add('hidden');
-        document.getElementById('dr-subtitle').classList.add('hidden');
-        document.getElementById('buyer-sig-block').classList.add('hidden');
+        recapBuilder.classList.add('hidden');
+        recapPaper.classList.add('hidden');
+        drSubtitle.classList.add('hidden');
+        buyerSig.classList.add('hidden');
     }
 
     if(window.innerWidth < 1024) {
@@ -193,17 +202,12 @@ function applySettings() {
     .catch(err => console.log("Could not load cloud settings yet."));
 }
 
-// --- CLOUD SYNC: ARCHIVE DOCUMENT ---
-// --- CLOUD SYNC: ARCHIVE DOCUMENT ---
 function saveToNeon() {
     showNotification("Syncing to Neon Database...");
-
     let itemsArray = [];
     let contractDetails = null;
 
-    // 1. Gather Data based on Document Type
     if (curDocType === 'Deal Recap') {
-        // Grab all 17 contract fields
         contractDetails = {
             product: document.getElementById('dr-product').value,
             qty: document.getElementById('dr-qty').value,
@@ -224,7 +228,6 @@ function saveToNeon() {
             others: document.getElementById('dr-others').value
         };
     } else {
-        // Grab standard invoice line items
         document.querySelectorAll('.item-row').forEach(row => {
             itemsArray.push({
                 description: row.querySelector('.i-desc').value,
@@ -234,7 +237,6 @@ function saveToNeon() {
         });
     }
 
-    // 2. Build the final payload
     const docData = {
         ref_no: document.getElementById('docNum').value,
         doc_type: curDocType,
@@ -246,7 +248,6 @@ function saveToNeon() {
         contract_details: contractDetails
     };
 
-    // 3. Send to API
     fetch('/api/save-to-neon', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -259,14 +260,12 @@ function saveToNeon() {
             currentRefNumber++;
             updateDocNumber();
         } else {
-            console.error(response.error);
             showNotification("Archive Failed 🔴");
         }
     })
     .catch(() => showNotification("Network Error 🔴"));
 }
 
-// --- BUILDER ENGINE ---
 function addRow() {
     const rowId = Date.now();
     const row = document.createElement('div');
@@ -283,14 +282,12 @@ function addRow() {
 }
 
 function sync() {
-    // 1. Sync Shared Fields
     const clientName = document.getElementById('clientName').value || 'Client Name';
     document.getElementById('pName').innerText = clientName;
     document.getElementById('pAddr').innerText = document.getElementById('address').value;
     document.getElementById('pDate').innerText = document.getElementById('docDate').value || new Date().toLocaleDateString('en-ZM');
     document.getElementById('pSales').innerText = document.getElementById('salesRep').value;
 
-    // 2. Sync Standard Invoice Logic
     if (curDocType !== 'Deal Recap') {
         const rows = document.querySelectorAll('.item-row');
         const tableBody = document.getElementById('pTable');
@@ -310,25 +307,15 @@ function sync() {
         document.getElementById('pSub').innerText = "ZMW " + sub.toLocaleString(undefined, {minimumFractionDigits: 2});
         document.getElementById('pVat').innerText = "ZMW " + vat.toLocaleString(undefined, {minimumFractionDigits: 2});
         document.getElementById('pTotal').innerText = "ZMW " + (sub + vat).toLocaleString(undefined, {minimumFractionDigits: 2});
-    }
-
-    // 3. Sync Deal Recap Logic
-    if (curDocType === 'Deal Recap') {
+    } else {
         const product = document.getElementById('dr-product').value || '_______';
         const qty = document.getElementById('dr-qty').value || '_______';
-        
-        // Build the dynamic subtitle
         document.getElementById('dr-subtitle').innerText = `Deal Recap for Sale of ${qty} litres of ${product} to ${clientName}`;
-        
-        // Map all 17 inputs directly to the table cells
         const drFields = ['product', 'qty', 'price', 'vat', 'storage', 'marking', 'srf', 'erb', 'window', 'delivery', 'quality', 'qtydet', 'transfer', 'payment', 'laytime', 'inspection', 'others'];
-        
         drFields.forEach(field => {
             const val = document.getElementById(`dr-${field}`).value;
             document.getElementById(`p-dr-${field}`).innerText = val ? val : '-';
         });
-
-        // The buyer name is mirrored in the table
         document.getElementById('p-dr-buyer').innerText = clientName;
     }
 }
@@ -336,7 +323,6 @@ function sync() {
 function finalSave() {
     showNotification("Generating PDF...");
     const el = document.getElementById('pdfArea');
-    
     const oldTransform = el.style.transform;
     el.style.transform = 'scale(1)'; 
 
@@ -365,26 +351,23 @@ function switchView(view, btn) {
     const settings = document.getElementById('settings-view');
     const preview = document.getElementById('previewPanel');
     const dashboard = document.getElementById('dashboard-view');
-    const expenses = document.getElementById('expenses-view'); // Add this line
+    const expenses = document.getElementById('expenses-view');
     
-    // Hide everything first
-    editor.classList.add('hidden');
-    settings.classList.add('hidden');
-    preview.classList.add('hidden');
-    dashboard.classList.add('hidden');
-    expenses.classList.add('hidden'); // Add this line
+    // Hide all views first
+    [editor, settings, preview, dashboard, expenses].forEach(el => {
+        if(el) el.classList.add('hidden');
+    });
 
-    // Show only what's needed
     if (view === 'dashboard') {
         dashboard.classList.remove('hidden');
         loadDashboard(); 
     } else if (view === 'expenses') {
         expenses.classList.remove('hidden');
-        loadExpenses(); // This triggers the database fetch for expenses!
+        loadExpenses();
     } else if (view === 'settings') {
         settings.classList.remove('hidden');
         preview.classList.remove('hidden');
-        loadProductSettings(); 
+        loadProductSettings();
         setTimeout(adjustMobileScale, 50); 
     } else {
         editor.classList.remove('hidden');
@@ -392,17 +375,15 @@ function switchView(view, btn) {
         setTimeout(adjustMobileScale, 50); 
     }
 
-    // Handle active button styles
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
     if(btn) btn.classList.add('active');
 
-    // Close mobile sidebar safely
     if(window.innerWidth < 1024) {
         document.getElementById('sidebar').classList.remove('open');
         document.getElementById('overlay').classList.remove('open');
     }
 }
-// Add these functions to your script.js
+
 function saveExpense() {
     const data = {
         date: document.getElementById('exp-date').value || new Date().toISOString().split('T')[0],
@@ -433,21 +414,18 @@ function loadExpenses() {
     .then(data => {
         const body = document.getElementById('expense-table-body');
         body.innerHTML = '';
-        let totalExp = 0;
         data.data.forEach(exp => {
-            totalExp += parseFloat(exp.amount);
             body.innerHTML += `<tr>
                 <td class="py-4 px-6 text-slate-500">${new Date(exp.date).toLocaleDateString()}</td>
                 <td class="py-4 px-6 font-bold text-slate-700">${exp.category}</td>
                 <td class="py-4 px-6 text-right font-black text-red-600">ZMW ${parseFloat(exp.amount).toLocaleString()}</td>
             </tr>`;
         });
-        // We will use totalExp later to calculate Net Profit on the dashboard!
     });
 }
-// --- DASHBOARD DATA ENGINE ---
-let dashboardDocs = []; // Global array for search filtering
-let revChart = null; // Global chart instance
+
+let dashboardDocs = [];
+let revChart = null;
 
 function loadDashboard() {
     const tableBody = document.getElementById('dash-table-body');
@@ -457,13 +435,13 @@ function loadDashboard() {
     .then(res => res.json())
     .then(data => {
         if(data.success) {
-            dashboardDocs = data.data; // Save for filtering
+            dashboardDocs = data.data;
             renderDashboardTable(dashboardDocs);
             renderChart(dashboardDocs);
         }
     })
     .catch(() => {
-        tableBody.innerHTML = '<tr><td colspan="6" class="text-center py-8 font-bold text-red-500">Network Error. Could not load database. 🔴</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="6" class="text-center py-8 font-bold text-red-500">Network Error. 🔴</td></tr>';
     });
 }
 
@@ -483,12 +461,10 @@ function renderDashboardTable(docs) {
         const amt = parseFloat(String(doc.total_amount).replace(/,/g, '')) || 0;
         totalRevenue += amt;
 
-        // Status Badge Styling
         let statusBadge = `<span class="bg-slate-100 text-slate-600 px-2 py-1 rounded-md text-[10px] font-black tracking-wider cursor-pointer" onclick="toggleStatus(${doc.id}, '${doc.status || 'DRAFT'}')">${doc.status || 'DRAFT'}</span>`;
         if(doc.status === 'PAID') statusBadge = `<span class="bg-green-100 text-green-700 px-2 py-1 rounded-md text-[10px] font-black tracking-wider cursor-pointer" onclick="toggleStatus(${doc.id}, 'PAID')">PAID</span>`;
         if(doc.status === 'SENT') statusBadge = `<span class="bg-yellow-100 text-yellow-700 px-2 py-1 rounded-md text-[10px] font-black tracking-wider cursor-pointer" onclick="toggleStatus(${doc.id}, 'SENT')">SENT</span>`;
 
-        // JSON dump for the Clone button
         const docJson = encodeURIComponent(JSON.stringify(doc));
 
         tableBody.innerHTML += `
@@ -521,18 +497,14 @@ function filterDashboard() {
 
 function cloneDoc(encodedJson) {
     const doc = JSON.parse(decodeURIComponent(encodedJson));
-    
-    // Switch to editor
     const editorBtn = document.querySelector(`button[onclick*="setDoc('${doc.doc_type}'"]`) || document.querySelector('.nav-btn');
     switchView('editor', editorBtn);
     setDoc(doc.doc_type, editorBtn);
 
-    // Auto-fill client
     document.getElementById('clientName').value = doc.client_name;
     document.getElementById('address').value = doc.address;
-    
-    // Clear existing items and clone them
     document.getElementById('itemList').innerHTML = '';
+    
     if(doc.items && Array.isArray(doc.items)) {
         doc.items.forEach(item => {
             addRow();
@@ -544,7 +516,6 @@ function cloneDoc(encodedJson) {
         });
     }
 
-    // Auto-fill contract details if it's a Deal Recap
     if(doc.doc_type === 'Deal Recap' && doc.contract_details) {
         Object.keys(doc.contract_details).forEach(key => {
             const el = document.getElementById(`dr-${key}`);
@@ -552,18 +523,14 @@ function cloneDoc(encodedJson) {
         });
     }
 
-    // Give it today's date
     document.getElementById('docDate').value = new Date().toISOString().split('T')[0];
-    
     showNotification(`Cloned ${doc.doc_type} for ${doc.client_name}`);
     sync();
 }
 
 function renderChart(docs) {
     const ctx = document.getElementById('revenueChart').getContext('2d');
-    if(revChart) revChart.destroy(); // Clear old chart
-    
-    // For now, we'll just plot the last 10 documents as a visual representation
+    if(revChart) revChart.destroy();
     const recentDocs = [...docs].reverse().slice(-10);
     const labels = recentDocs.map(d => d.ref_no.split('-')[2] || d.ref_no);
     const data = recentDocs.map(d => parseFloat(String(d.total_amount).replace(/,/g, '')) || 0);
@@ -592,14 +559,11 @@ function renderChart(docs) {
 }
 
 function toggleStatus(id, currentStatus) {
-    // 1. Determine the next status in the cycle
     let nextStatus = 'SENT';
     if (currentStatus === 'SENT') nextStatus = 'PAID';
     if (currentStatus === 'PAID') nextStatus = 'DRAFT';
 
     showNotification(`Updating status to ${nextStatus}...`);
-
-    // 2. Send the update to your Vercel API and Neon Database
     fetch('/api/update-status', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -608,8 +572,7 @@ function toggleStatus(id, currentStatus) {
     .then(async (res) => {
         const response = await res.json();
         if (res.ok && response.success) {
-            showNotification(`Status updated to ${nextStatus} 🟢`);
-            // 3. Silently reload the dashboard to show the new badge colors
+            showNotification(`Status updated 🟢`);
             loadDashboard(); 
         } else {
             showNotification("Status Update Failed 🔴");
@@ -618,9 +581,7 @@ function toggleStatus(id, currentStatus) {
     .catch(() => showNotification("Network Error 🔴"));
 }
 
-// --- CRM AUTO-FILL ENGINE ---
 let clientDatabase = {}; 
-
 function loadClients() {
     fetch('/api/get-clients')
     .then(res => res.json())
@@ -629,16 +590,14 @@ function loadClients() {
             const datalist = document.getElementById('clientData');
             datalist.innerHTML = '';
             data.data.forEach(client => {
-                clientDatabase[client.name] = client.address; // Memorize address
-                datalist.innerHTML += `<option value="${client.name}">`; // Add to dropdown
+                clientDatabase[client.name] = client.address;
+                datalist.innerHTML += `<option value="${client.name}">`;
             });
         }
-    })
-    .catch(err => console.log("Failed to load CRM data."));
+    });
 }
-// --- PRODUCT INVENTORY ENGINE ---
-let productDatabase = {}; 
 
+let productDatabase = {}; 
 function loadProducts() {
     fetch('/api/get-products')
     .then(res => res.json())
@@ -647,33 +606,29 @@ function loadProducts() {
             const datalist = document.getElementById('productData');
             datalist.innerHTML = '';
             data.data.forEach(prod => {
-                productDatabase[prod.name] = prod; // Memorize all the specific fees
+                productDatabase[prod.name] = prod;
                 datalist.innerHTML += `<option value="${prod.name}">`; 
             });
         }
-    })
-    .catch(err => console.log("Failed to load Product data."));
+    });
 }
 
 function autoFillProduct() {
     const selectedName = document.getElementById('dr-product').value;
     const prod = productDatabase[selectedName];
-    
     if(prod) {
-        // Auto-fill all the complex fields instantly
         document.getElementById('dr-price').value = prod.base_price || '';
         document.getElementById('dr-storage').value = prod.storage_cost || '';
         document.getElementById('dr-marking').value = prod.marking_fee || '';
         document.getElementById('dr-srf').value = prod.srf || '';
         document.getElementById('dr-erb').value = prod.erb || '';
-        sync(); // Update the paper instantly
+        sync();
     }
 }
-// --- CATALOG SETTINGS ENGINE ---
+
 function loadProductSettings() {
     const container = document.getElementById('settings-products-list');
     container.innerHTML = '<p class="text-xs text-slate-500 font-bold text-center py-4">Loading catalog...</p>';
-
     fetch('/api/get-products')
     .then(res => res.json())
     .then(data => {
@@ -681,7 +636,7 @@ function loadProductSettings() {
             container.innerHTML = '';
             data.data.forEach((prod, index) => {
                 container.innerHTML += `
-                    <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl relative">
+                    <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl relative mb-4">
                         <h4 class="font-black text-sm text-slate-800 mb-3 uppercase">${prod.name}</h4>
                         <div class="grid grid-cols-3 gap-2 mb-3">
                             <div><label class="text-[9px] font-bold text-slate-500 uppercase">Base Price</label><input type="text" id="edit-price-${index}" value="${prod.base_price || ''}" class="input-box text-xs py-2 px-3"></div>
@@ -695,8 +650,7 @@ function loadProductSettings() {
                 `;
             });
         }
-    })
-    .catch(() => container.innerHTML = '<p class="text-xs text-red-500">Error loading catalog.</p>');
+    });
 }
 
 function saveProductPrice(name, index) {
@@ -708,7 +662,6 @@ function saveProductPrice(name, index) {
         marking_fee: document.getElementById(`edit-marking-${index}`).value,
         srf: document.getElementById(`edit-srf-${index}`).value
     };
-
     fetch('/api/update-product', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -718,19 +671,18 @@ function saveProductPrice(name, index) {
         const response = await res.json();
         if (res.ok && response.success) {
             showNotification(`${name} Pricing Updated 🟢`);
-            loadProducts(); // Refresh the Deal Recap dropdown memory silently
+            loadProducts();
         } else {
             showNotification("Pricing Update Failed 🔴");
         }
-    })
-    .catch(() => showNotification("Network Error 🔴"));
+    });
 }
 
 function autoFillClient() {
     const selectedName = document.getElementById('clientName').value;
     if(clientDatabase[selectedName]) {
         document.getElementById('address').value = clientDatabase[selectedName];
-        sync(); // Update the paper instantly
+        sync();
     }
 }
 
@@ -739,9 +691,8 @@ window.onload = () => {
     updateDocNumber();
     addRow();
     loadClients(); 
-    loadProducts(); // <--- Add this new line here
+    loadProducts(); 
     setTimeout(adjustMobileScale, 100); 
-
     const dashBtn = document.querySelector('button[onclick*="dashboard"]');
     switchView('dashboard', dashBtn);
 };
