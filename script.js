@@ -145,6 +145,8 @@ async function saveSettings() {
         signature: globalSignature 
     };
     
+    console.log('Sending config:', config);
+    
     try {
         const res = await fetch('/api/settings', {
             method: 'POST',
@@ -152,7 +154,11 @@ async function saveSettings() {
             body: JSON.stringify(config)
         });
         
+        console.log('Response status:', res.status);
+        console.log('Response ok:', res.ok);
+        
         const data = await res.json();
+        console.log('Response data:', data);
         
         if (res.ok && data.success) {
             showNotification("ERP Settings Cloud Synced ☁️");
