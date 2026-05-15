@@ -1,3 +1,7 @@
+body { min-height: 100vh; }
+main { min-height: 0; }
+#editor-view, #settings-view, #previewPanel, #dashboard-view, #expenses-view { min-height: 0; }
+
 #sidebar { transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); background: #0B1221; z-index: 100; }
 .nav-btn { width: 100%; display: flex; align-items: center; gap: 1rem; padding: 1.25rem; border-radius: 1rem; color: #94a3b8; font-weight: 700; font-size: 0.875rem; transition: 0.3s; margin-bottom: 0.5rem; }
 .nav-btn.active { background: #2563eb; color: white; box-shadow: 0 10px 30px rgba(37,99,235,0.3); }
