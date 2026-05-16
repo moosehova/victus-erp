@@ -19,7 +19,7 @@ function showNotification(message) {
     toast.id = 'erp-toast';
     toast.className = 'fixed top-10 left-1/2 transform -translate-x-1/2 bg-slate-900 text-white px-8 py-4 rounded-2xl shadow-2xl z-[999] font-black tracking-wider text-xs uppercase border border-slate-700 transition-all duration-300 translate-y-[-20px] opacity-0';
     toast.innerText = message.startsWith('Premium') ? message : `Premium • ${message}`;
-    
+
     document.body.appendChild(toast);
 
     setTimeout(() => toast.classList.remove('translate-y-[-20px]', 'opacity-0'), 10);
@@ -35,23 +35,23 @@ function adjustMobileScale() {
     const pdfArea = document.getElementById('pdfArea');
     const wrapper = document.getElementById('scale-wrapper');
     const previewPanel = document.getElementById('previewPanel');
-    
-    const paperWidth = 800; 
+
+    const paperWidth = 800;
     const paperHeight = 1131;
-    
+
     if (window.innerWidth < 1024) {
         const availableWidth = window.innerWidth - 32;
         let scale = availableWidth / paperWidth;
-        
+
         pdfArea.style.transform = `scale(${scale})`;
         wrapper.style.width = `${paperWidth * scale}px`;
         wrapper.style.height = `${paperHeight * scale}px`;
     } else {
-        const availableDesktopWidth = previewPanel.clientWidth - 96; 
+        const availableDesktopWidth = previewPanel.clientWidth - 96;
         let scale = availableDesktopWidth / paperWidth;
-        
-        if (scale > 0.8) scale = 0.8; 
-        
+
+        if (scale > 0.8) scale = 0.8;
+
         pdfArea.style.transform = `scale(${scale})`;
         wrapper.style.width = `${paperWidth * scale}px`;
         wrapper.style.height = `${paperHeight * scale}px`;
@@ -61,9 +61,9 @@ function adjustMobileScale() {
 // --- DOCUMENT LOGIC & TOGGLES ---
 function updateDocNumber() {
     let prefix = 'INV';
-    if(curDocType === 'Quotation') prefix = 'QT';
-    if(curDocType === 'Delivery Note') prefix = 'DN';
-    if(curDocType === 'Deal Recap') prefix = 'DR';
+    if (curDocType === 'Quotation') prefix = 'QT';
+    if (curDocType === 'Delivery Note') prefix = 'DN';
+    if (curDocType === 'Deal Recap') prefix = 'DR';
 
     const finalRef = `VEL-${prefix}-${currentRefNumber}`;
     document.getElementById('docNum').value = finalRef;
@@ -73,12 +73,12 @@ function updateDocNumber() {
 function setDoc(type, btn) {
     curDocType = type;
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-    if(btn) btn.classList.add('active');
-    
+    if (btn) btn.classList.add('active');
+
     document.getElementById('pType').innerText = type.toUpperCase();
     document.getElementById('editTitle').innerText = type;
     updateDocNumber();
-    
+
     // UI RESET: Handle visibility switching between Standard and Deal Recap
     const stdBuilder = document.getElementById('standard-builder');
     const stdPaper = document.getElementById('standard-paper');
@@ -92,7 +92,7 @@ function setDoc(type, btn) {
         stdBuilder.classList.add('hidden');
         stdPaper.classList.add('hidden');
         authBlock.classList.add('hidden');
-        
+
         recapBuilder.classList.remove('hidden');
         recapPaper.classList.remove('hidden');
         drSubtitle.classList.remove('hidden');
@@ -101,18 +101,18 @@ function setDoc(type, btn) {
         stdBuilder.classList.remove('hidden');
         stdPaper.classList.remove('hidden');
         authBlock.classList.remove('hidden');
-        
+
         recapBuilder.classList.add('hidden');
         recapPaper.classList.add('hidden');
         drSubtitle.classList.add('hidden');
         buyerSig.classList.add('hidden');
     }
 
-    if(window.innerWidth < 1024) {
+    if (window.innerWidth < 1024) {
         document.getElementById('sidebar').classList.remove('open');
         document.getElementById('overlay').classList.remove('open');
     }
-    
+
     sync();
 }
 
@@ -120,18 +120,18 @@ function setDoc(type, btn) {
 function handleSignature(event) {
     const reader = new FileReader();
     const sigImg = document.getElementById('pSignature');
-    reader.onload = function() {
+    reader.onload = function () {
         sigImg.src = reader.result;
         sigImg.classList.remove('hidden');
-        globalSignature = reader.result; 
+        globalSignature = reader.result;
         showNotification("Signature Ready. Click Save to Sync.");
     };
-    if(event.target.files[0]) reader.readAsDataURL(event.target.files[0]);
+    if (event.target.files[0]) reader.readAsDataURL(event.target.files[0]);
 }
 
 async function saveSettings() {
     showNotification("Syncing Settings to Cloud...");
-    
+
     const getValue = id => document.getElementById(id)?.value || '';
     const config = {
         tpin: getValue('set-tpin'),
@@ -144,27 +144,27 @@ async function saveSettings() {
         swift_code: getValue('set-swift'),
         sort_code: getValue('set-sort'),
         currency: getValue('set-currency'),
-        signature: globalSignature 
+        signature: globalSignature
     };
-    
+
     console.log('Sending config:', config);
-    
+
     try {
         const res = await fetch('/api/settings', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(config)
         });
-        
+
         console.log('Response status:', res.status);
         console.log('Response ok:', res.ok);
-        
+
         const data = await res.json();
         console.log('Response data:', data);
-        
+
         if (res.ok && data.success) {
             showNotification("ERP Settings Cloud Synced ☁️");
-            applySettings(); 
+            applySettings();
         } else {
             const message = data.error || data.message || res.statusText || 'Server Error';
             showNotification("Cloud Sync Failed: " + message + " 🔴");
@@ -178,59 +178,59 @@ async function saveSettings() {
 // --- DYNAMIC SETTINGS SYNC ---
 function applySettings() {
     fetch('/api/settings')
-    .then(res => res.json())
-    .then(data => {
-        if(data.success && data.data) {
-            const config = data.data;
-            const savedTax = (config.tax_rate !== undefined && config.tax_rate !== null && config.tax_rate !== '') ? parseFloat(config.tax_rate) : 0;
-            taxRate = savedTax / 100;
-            
-            const setInput = (id, value) => {
-                const el = document.getElementById(id);
-                if (el) el.value = value || '';
-            };
-            const setText = (id, value) => {
-                const el = document.getElementById(id);
-                if (el) el.innerText = value;
-            };
-            
-            // Fill Settings Form
-            setInput('set-tpin', config.tpin);
-            setInput('set-tax', config.tax_rate);
-            setInput('set-acc-name', config.account_name);
-            setInput('set-bank', config.bank_name);
-            setInput('set-account', config.account_number);
-            setInput('set-branch', config.branch_name);
-            setInput('set-branch-code', config.branch_code);
-            setInput('set-swift', config.swift_code);
-            setInput('set-sort', config.sort_code);
-            setInput('set-currency', config.currency);
-            
-            // Update Preview Header & Footer dynamically (No hardcoding)
-            setText('pVatRate', savedTax);
-            setText('p-set-tpin', config.tpin || '-');
-            setText('p-set-acc-name', config.account_name || '-');
-            setText('p-set-bank', config.bank_name || '-');
-            setText('p-set-account', config.account_number || '-');
-            setText('p-set-branch', config.branch_name || '-');
-            setText('p-set-branch-code', config.branch_code || '-');
-            setText('p-set-swift', config.swift_code || '-');
-            setText('p-set-sort', config.sort_code || '-');
-            setText('p-set-currency', config.currency || '-');
-            
-            // Signature handling
-            if (config.signature && config.signature !== 'null') {
-                globalSignature = config.signature;
-                const sigImg = document.getElementById('pSignature');
-                if (sigImg) {
-                    sigImg.src = config.signature;
-                    sigImg.classList.remove('hidden');
+        .then(res => res.json())
+        .then(data => {
+            if (data.success && data.data) {
+                const config = data.data;
+                const savedTax = (config.tax_rate !== undefined && config.tax_rate !== null && config.tax_rate !== '') ? parseFloat(config.tax_rate) : 0;
+                taxRate = savedTax / 100;
+
+                const setInput = (id, value) => {
+                    const el = document.getElementById(id);
+                    if (el) el.value = value || '';
+                };
+                const setText = (id, value) => {
+                    const el = document.getElementById(id);
+                    if (el) el.innerText = value;
+                };
+
+                // Fill Settings Form
+                setInput('set-tpin', config.tpin);
+                setInput('set-tax', config.tax_rate);
+                setInput('set-acc-name', config.account_name);
+                setInput('set-bank', config.bank_name);
+                setInput('set-account', config.account_number);
+                setInput('set-branch', config.branch_name);
+                setInput('set-branch-code', config.branch_code);
+                setInput('set-swift', config.swift_code);
+                setInput('set-sort', config.sort_code);
+                setInput('set-currency', config.currency);
+
+                // Update Preview Header & Footer dynamically (No hardcoding)
+                setText('pVatRate', savedTax);
+                setText('p-set-tpin', config.tpin || '-');
+                setText('p-set-acc-name', config.account_name || '-');
+                setText('p-set-bank', config.bank_name || '-');
+                setText('p-set-account', config.account_number || '-');
+                setText('p-set-branch', config.branch_name || '-');
+                setText('p-set-branch-code', config.branch_code || '-');
+                setText('p-set-swift', config.swift_code || '-');
+                setText('p-set-sort', config.sort_code || '-');
+                setText('p-set-currency', config.currency || '-');
+
+                // Signature handling
+                if (config.signature && config.signature !== 'null') {
+                    globalSignature = config.signature;
+                    const sigImg = document.getElementById('pSignature');
+                    if (sigImg) {
+                        sigImg.src = config.signature;
+                        sigImg.classList.remove('hidden');
+                    }
                 }
+                sync();
             }
-            sync(); 
-        }
-    })
-    .catch(err => console.log("Waiting for cloud sync..."));
+        })
+        .catch(err => console.log("Waiting for cloud sync..."));
 }
 
 // --- CLEAN NEON ARCHIVE ---
@@ -328,13 +328,13 @@ function sync() {
             const p = parseFloat(r.querySelector('.i-price').value) || 0;
             const total = q * p;
             sub += total;
-            if(d) tableBody.innerHTML += `<tr><td class="py-4 px-6 uppercase">${d}</td><td class="text-center font-bold text-slate-600">${q}</td><td class="text-right">ZMW ${p.toLocaleString()}</td><td class="text-right font-black">ZMW ${total.toLocaleString()}</td></tr>`;
+            if (d) tableBody.innerHTML += `<tr><td class="py-4 px-6 uppercase">${d}</td><td class="text-center font-bold text-slate-600">${q}</td><td class="text-right">ZMW ${p.toLocaleString()}</td><td class="text-right font-black">ZMW ${total.toLocaleString()}</td></tr>`;
         });
 
         const vat = sub * taxRate;
-        document.getElementById('pSub').innerText = "ZMW " + sub.toLocaleString(undefined, {minimumFractionDigits: 2});
-        document.getElementById('pVat').innerText = "ZMW " + vat.toLocaleString(undefined, {minimumFractionDigits: 2});
-        document.getElementById('pTotal').innerText = "ZMW " + (sub + vat).toLocaleString(undefined, {minimumFractionDigits: 2});
+        document.getElementById('pSub').innerText = "ZMW " + sub.toLocaleString(undefined, { minimumFractionDigits: 2 });
+        document.getElementById('pVat').innerText = "ZMW " + vat.toLocaleString(undefined, { minimumFractionDigits: 2 });
+        document.getElementById('pTotal').innerText = "ZMW " + (sub + vat).toLocaleString(undefined, { minimumFractionDigits: 2 });
     } else {
         const product = document.getElementById('dr-product').value || '_______';
         const qty = document.getElementById('dr-qty').value || '_______';
@@ -352,13 +352,13 @@ function finalSave() {
     showNotification("Generating PDF...");
     const el = document.getElementById('pdfArea');
     const oldTransform = el.style.transform;
-    el.style.transform = 'scale(1)'; 
+    el.style.transform = 'scale(1)';
 
-    html2pdf().from(el).set({ 
-        margin: 0, 
-        filename: `Victus_${curDocType}_${document.getElementById('docNum').value}.pdf`, 
-        html2canvas: { scale: 3, useCORS: true, scrollY: 0 }, 
-        jsPDF: { unit: 'px', format: [800, 1131], orientation: 'portrait' } 
+    html2pdf().from(el).set({
+        margin: 0,
+        filename: `Victus_${curDocType}_${document.getElementById('docNum').value}.pdf`,
+        html2canvas: { scale: 3, useCORS: true, scrollY: 0 },
+        jsPDF: { unit: 'px', format: [800, 1131], orientation: 'portrait' }
     }).toPdf().get('pdf').then(pdf => {
         const pages = pdf.internal.getNumberOfPages();
         for (let i = pages; i > 1; i--) { pdf.deletePage(i); }
@@ -380,15 +380,15 @@ function switchView(view, btn) {
     const preview = document.getElementById('previewPanel');
     const dashboard = document.getElementById('dashboard-view');
     const expenses = document.getElementById('expenses-view');
-    
+
     // Hide all views first
     [editor, settings, preview, dashboard, expenses].forEach(el => {
-        if(el) el.classList.add('hidden');
+        if (el) el.classList.add('hidden');
     });
 
     if (view === 'dashboard') {
         dashboard.classList.remove('hidden');
-        loadDashboard(); 
+        loadDashboard();
     } else if (view === 'expenses') {
         expenses.classList.remove('hidden');
         loadExpenses();
@@ -396,7 +396,7 @@ function switchView(view, btn) {
         settings.classList.remove('hidden');
         preview.classList.remove('hidden');
         loadProductSettings();
-        setTimeout(adjustMobileScale, 50); 
+        setTimeout(adjustMobileScale, 50);
     } else if (view === 'preview-only') {
         editor.classList.add('hidden');
         settings.classList.add('hidden');
@@ -407,13 +407,13 @@ function switchView(view, btn) {
     } else {
         editor.classList.remove('hidden');
         preview.classList.remove('hidden');
-        setTimeout(adjustMobileScale, 50); 
+        setTimeout(adjustMobileScale, 50);
     }
 
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-    if(btn) btn.classList.add('active');
+    if (btn) btn.classList.add('active');
 
-    if(window.innerWidth < 1024) {
+    if (window.innerWidth < 1024) {
         document.getElementById('sidebar').classList.remove('open');
         document.getElementById('overlay').classList.remove('open');
     }
@@ -427,14 +427,14 @@ function saveExpense() {
         amount: document.getElementById('exp-amt').value
     };
 
-    if(!data.amount) return showNotification("Please enter an amount 🔴");
+    if (!data.amount) return showNotification("Please enter an amount 🔴");
 
     fetch('/api/save-expense', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
     }).then(res => res.json()).then(res => {
-        if(res.success) {
+        if (res.success) {
             showNotification("Expense Recorded 🔴");
             loadExpenses();
             document.getElementById('exp-desc').value = '';
@@ -445,18 +445,18 @@ function saveExpense() {
 
 function loadExpenses() {
     fetch('/api/get-expenses')
-    .then(res => res.json())
-    .then(data => {
-        const body = document.getElementById('expense-table-body');
-        body.innerHTML = '';
-        data.data.forEach(exp => {
-            body.innerHTML += `<tr>
+        .then(res => res.json())
+        .then(data => {
+            const body = document.getElementById('expense-table-body');
+            body.innerHTML = '';
+            data.data.forEach(exp => {
+                body.innerHTML += `<tr>
                 <td class="py-4 px-6 text-slate-500">${new Date(exp.date).toLocaleDateString()}</td>
                 <td class="py-4 px-6 font-bold text-slate-700">${exp.category}</td>
                 <td class="py-4 px-6 text-right font-black text-red-600">ZMW ${parseFloat(exp.amount).toLocaleString()}</td>
             </tr>`;
+            });
         });
-    });
 }
 
 let dashboardDocs = [];
@@ -467,17 +467,17 @@ function loadDashboard() {
     tableBody.innerHTML = '<tr><td colspan="6" class="text-center py-8 font-bold text-slate-500">Loading live data from Neon... ⏳</td></tr>';
 
     fetch('/api/get-documents')
-    .then(res => res.json())
-    .then(data => {
-        if(data.success) {
-            dashboardDocs = data.data;
-            renderDashboardTable(dashboardDocs);
-            renderChart(dashboardDocs);
-        }
-    })
-    .catch(() => {
-        tableBody.innerHTML = '<tr><td colspan="6" class="text-center py-8 font-bold text-red-500">Network Error. 🔴</td></tr>';
-    });
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                dashboardDocs = data.data;
+                renderDashboardTable(dashboardDocs);
+                renderChart(dashboardDocs);
+            }
+        })
+        .catch(() => {
+            tableBody.innerHTML = '<tr><td colspan="6" class="text-center py-8 font-bold text-red-500">Network Error. 🔴</td></tr>';
+        });
 }
 
 function renderDashboardTable(docs) {
@@ -485,7 +485,7 @@ function renderDashboardTable(docs) {
     tableBody.innerHTML = '';
     let totalRevenue = 0;
 
-    if(docs.length === 0) {
+    if (docs.length === 0) {
         tableBody.innerHTML = '<tr><td colspan="6" class="text-center py-8 font-bold text-slate-400">No documents found.</td></tr>';
         document.getElementById('dash-total-rev').innerText = 'ZMW 0.00';
         document.getElementById('dash-total-docs').innerText = '0';
@@ -494,11 +494,15 @@ function renderDashboardTable(docs) {
 
     docs.forEach(doc => {
         const amt = parseFloat(String(doc.total_amount).replace(/,/g, '')) || 0;
-        totalRevenue += amt;
+
+        // REVENUE LOGIC GATE: Only count PAID documents that are NOT Quotes/Proformas
+        if (doc.status === 'PAID' && doc.doc_type !== 'Quotation' && doc.doc_type !== 'Proforma Invoice') {
+            totalRevenue += amt;
+        }
 
         let statusBadge = `<span class="bg-slate-100 text-slate-600 px-2 py-1 rounded-md text-[10px] font-black tracking-wider cursor-pointer" onclick="toggleStatus(${doc.id}, '${doc.status || 'DRAFT'}')">${doc.status || 'DRAFT'}</span>`;
-        if(doc.status === 'PAID') statusBadge = `<span class="bg-green-100 text-green-700 px-2 py-1 rounded-md text-[10px] font-black tracking-wider cursor-pointer" onclick="toggleStatus(${doc.id}, 'PAID')">PAID</span>`;
-        if(doc.status === 'SENT') statusBadge = `<span class="bg-yellow-100 text-yellow-700 px-2 py-1 rounded-md text-[10px] font-black tracking-wider cursor-pointer" onclick="toggleStatus(${doc.id}, 'SENT')">SENT</span>`;
+        if (doc.status === 'PAID') statusBadge = `<span class="bg-green-100 text-green-700 px-2 py-1 rounded-md text-[10px] font-black tracking-wider cursor-pointer" onclick="toggleStatus(${doc.id}, 'PAID')">PAID</span>`;
+        if (doc.status === 'SENT') statusBadge = `<span class="bg-yellow-100 text-yellow-700 px-2 py-1 rounded-md text-[10px] font-black tracking-wider cursor-pointer" onclick="toggleStatus(${doc.id}, 'SENT')">SENT</span>`;
 
         const docJson = encodeURIComponent(JSON.stringify(doc));
 
@@ -508,7 +512,7 @@ function renderDashboardTable(docs) {
                 <td class="py-4 px-6 text-slate-500 uppercase text-xs font-black tracking-wider">${doc.doc_type}</td>
                 <td class="py-4 px-6 font-medium text-slate-700">${doc.client_name}</td>
                 <td class="py-4 px-6">${statusBadge}</td>
-                <td class="py-4 px-6 text-right font-black text-blue-700">ZMW ${amt.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                <td class="py-4 px-6 text-right font-black text-blue-700">ZMW ${amt.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                 <td class="py-4 px-6 text-center space-x-2">
                     <button onclick="viewDocument('${docJson}')" class="text-xs bg-blue-600 text-white px-3 py-1.5 rounded-lg font-bold hover:bg-blue-500 transition-colors">View</button>
                     <button onclick="cloneDoc('${docJson}')" class="text-xs bg-slate-900 text-white px-3 py-1.5 rounded-lg font-bold hover:bg-blue-600 transition-colors">Clone</button>
@@ -518,18 +522,8 @@ function renderDashboardTable(docs) {
         `;
     });
 
-    document.getElementById('dash-total-rev').innerText = `ZMW ${totalRevenue.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+    document.getElementById('dash-total-rev').innerText = `ZMW ${totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
     document.getElementById('dash-total-docs').innerText = docs.length;
-}
-
-function filterDashboard() {
-    const term = document.getElementById('dashSearch').value.toLowerCase();
-    const filtered = dashboardDocs.filter(d => 
-        (d.ref_no && d.ref_no.toLowerCase().includes(term)) ||
-        (d.client_name && d.client_name.toLowerCase().includes(term)) ||
-        (d.doc_type && d.doc_type.toLowerCase().includes(term))
-    );
-    renderDashboardTable(filtered);
 }
 
 function cloneDoc(encodedJson) {
@@ -541,8 +535,8 @@ function cloneDoc(encodedJson) {
     document.getElementById('clientName').value = doc.client_name;
     document.getElementById('address').value = doc.address;
     document.getElementById('itemList').innerHTML = '';
-    
-    if(doc.items && Array.isArray(doc.items)) {
+
+    if (doc.items && Array.isArray(doc.items)) {
         doc.items.forEach(item => {
             addRow();
             const rows = document.querySelectorAll('.item-row');
@@ -553,10 +547,10 @@ function cloneDoc(encodedJson) {
         });
     }
 
-    if(doc.doc_type === 'Deal Recap' && doc.contract_details) {
+    if (doc.doc_type === 'Deal Recap' && doc.contract_details) {
         Object.keys(doc.contract_details).forEach(key => {
             const el = document.getElementById(`dr-${key}`);
-            if(el) el.value = doc.contract_details[key];
+            if (el) el.value = doc.contract_details[key];
         });
     }
 
@@ -635,25 +629,25 @@ function confirmDelete() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: deletePendingId })
     })
-    .then(async res => {
-        const data = await res.json();
-        closeDeleteModal();
-        if (res.ok && data.success) {
-            showNotification('Premium • Document deleted successfully');
-            loadDashboard();
-        } else {
-            showNotification('Premium • Delete failed: ' + (data.error || data.message || 'Server Error'));
-        }
-    })
-    .catch(() => {
-        closeDeleteModal();
-        showNotification('Premium • Network Error: Could not delete document');
-    });
+        .then(async res => {
+            const data = await res.json();
+            closeDeleteModal();
+            if (res.ok && data.success) {
+                showNotification('Premium • Document deleted successfully');
+                loadDashboard();
+            } else {
+                showNotification('Premium • Delete failed: ' + (data.error || data.message || 'Server Error'));
+            }
+        })
+        .catch(() => {
+            closeDeleteModal();
+            showNotification('Premium • Network Error: Could not delete document');
+        });
 }
 
 function renderChart(docs) {
     const ctx = document.getElementById('revenueChart').getContext('2d');
-    if(revChart) revChart.destroy();
+    if (revChart) revChart.destroy();
     const recentDocs = [...docs].reverse().slice(-10);
     const labels = recentDocs.map(d => d.ref_no.split('-')[2] || d.ref_no);
     const data = recentDocs.map(d => parseFloat(String(d.total_amount).replace(/,/g, '')) || 0);
@@ -692,54 +686,54 @@ function toggleStatus(id, currentStatus) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: id, newStatus: nextStatus })
     })
-    .then(async (res) => {
-        const response = await res.json();
-        if (res.ok && response.success) {
-            showNotification(`Status updated 🟢`);
-            loadDashboard(); 
-        } else {
-            showNotification("Status Update Failed 🔴");
-        }
-    })
-    .catch(() => showNotification("Network Error 🔴"));
+        .then(async (res) => {
+            const response = await res.json();
+            if (res.ok && response.success) {
+                showNotification(`Status updated 🟢`);
+                loadDashboard();
+            } else {
+                showNotification("Status Update Failed 🔴");
+            }
+        })
+        .catch(() => showNotification("Network Error 🔴"));
 }
 
-let clientDatabase = {}; 
+let clientDatabase = {};
 function loadClients() {
     fetch('/api/get-clients')
-    .then(res => res.json())
-    .then(data => {
-        if(data.success) {
-            const datalist = document.getElementById('clientData');
-            datalist.innerHTML = '';
-            data.data.forEach(client => {
-                clientDatabase[client.name] = client.address;
-                datalist.innerHTML += `<option value="${client.name}">`;
-            });
-        }
-    });
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                const datalist = document.getElementById('clientData');
+                datalist.innerHTML = '';
+                data.data.forEach(client => {
+                    clientDatabase[client.name] = client.address;
+                    datalist.innerHTML += `<option value="${client.name}">`;
+                });
+            }
+        });
 }
 
-let productDatabase = {}; 
+let productDatabase = {};
 function loadProducts() {
     fetch('/api/get-products')
-    .then(res => res.json())
-    .then(data => {
-        if(data.success) {
-            const datalist = document.getElementById('productData');
-            datalist.innerHTML = '';
-            data.data.forEach(prod => {
-                productDatabase[prod.name] = prod;
-                datalist.innerHTML += `<option value="${prod.name}">`; 
-            });
-        }
-    });
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                const datalist = document.getElementById('productData');
+                datalist.innerHTML = '';
+                data.data.forEach(prod => {
+                    productDatabase[prod.name] = prod;
+                    datalist.innerHTML += `<option value="${prod.name}">`;
+                });
+            }
+        });
 }
 
 function autoFillProduct() {
     const selectedName = document.getElementById('dr-product').value;
     const prod = productDatabase[selectedName];
-    if(prod) {
+    if (prod) {
         document.getElementById('dr-price').value = prod.base_price || '';
         document.getElementById('dr-storage').value = prod.storage_cost || '';
         document.getElementById('dr-marking').value = prod.marking_fee || '';
@@ -753,12 +747,12 @@ function loadProductSettings() {
     const container = document.getElementById('settings-products-list');
     container.innerHTML = '<p class="text-xs text-slate-500 font-bold text-center py-4">Loading catalog...</p>';
     fetch('/api/get-products')
-    .then(res => res.json())
-    .then(data => {
-        if(data.success && data.data.length > 0) {
-            container.innerHTML = '';
-            data.data.forEach((prod, index) => {
-                container.innerHTML += `
+        .then(res => res.json())
+        .then(data => {
+            if (data.success && data.data.length > 0) {
+                container.innerHTML = '';
+                data.data.forEach((prod, index) => {
+                    container.innerHTML += `
                     <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl relative mb-4">
                         <h4 class="font-black text-sm text-slate-800 mb-3 uppercase">${prod.name}</h4>
                         <div class="grid grid-cols-3 gap-2 mb-3">
@@ -771,9 +765,9 @@ function loadProductSettings() {
                         <button onclick="saveProductPrice('${prod.name}', ${index})" class="w-full bg-white border-2 border-orange-200 hover:border-orange-500 text-orange-600 font-black text-xs py-2 rounded-xl transition-colors tracking-widest uppercase shadow-sm">Update Rates</button>
                     </div>
                 `;
-            });
-        }
-    });
+                });
+            }
+        });
 }
 
 function saveProductPrice(name, index) {
@@ -790,20 +784,20 @@ function saveProductPrice(name, index) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updatedData)
     })
-    .then(async (res) => {
-        const response = await res.json();
-        if (res.ok && response.success) {
-            showNotification(`${name} Pricing Updated 🟢`);
-            loadProducts();
-        } else {
-            showNotification("Pricing Update Failed 🔴");
-        }
-    });
+        .then(async (res) => {
+            const response = await res.json();
+            if (res.ok && response.success) {
+                showNotification(`${name} Pricing Updated 🟢`);
+                loadProducts();
+            } else {
+                showNotification("Pricing Update Failed 🔴");
+            }
+        });
 }
 
 function autoFillClient() {
     const selectedName = document.getElementById('clientName').value;
-    if(clientDatabase[selectedName]) {
+    if (clientDatabase[selectedName]) {
         document.getElementById('address').value = clientDatabase[selectedName];
         sync();
     }
@@ -813,9 +807,9 @@ window.onload = () => {
     applySettings();
     updateDocNumber();
     addRow();
-    loadClients(); 
-    loadProducts(); 
-    setTimeout(adjustMobileScale, 100); 
+    loadClients();
+    loadProducts();
+    setTimeout(adjustMobileScale, 100);
     const dashBtn = document.querySelector('button[onclick*="dashboard"]');
     switchView('dashboard', dashBtn);
 };
