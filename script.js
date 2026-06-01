@@ -356,26 +356,24 @@ function sync() {
 function finalSave() {
     showNotification("Preparing PDF...");
 
-    // 1. Force the window to the top to prevent scroll offset bugs
+    // Force the window to the top to prevent scroll offset bugs
     window.scrollTo(0, 0);
 
     const el = document.getElementById('pdfArea');
     const main = document.querySelector('main');
     const body = document.body;
 
-    // 2. Store original styles to restore them perfectly later
     const oldTransform = el.style.transform;
     const oldPosition = el.style.position;
     const oldBodyOverflow = body.style.overflow;
     const oldMainOverflow = main.style.overflow;
 
-    // 3. STRIP THE CONSTRAINTS: Remove absolute positioning and hidden overflows
+    // Remove absolute positioning and hidden overflows
     el.style.transform = 'scale(1)';
     el.style.position = 'relative'; 
     body.style.overflow = 'visible';
     main.style.overflow = 'visible';
 
-    // 4. Give the browser 300ms to repaint the unlocked DOM
     setTimeout(() => {
         const opt = {
             margin: 0,
@@ -385,14 +383,19 @@ function finalSave() {
                 scale: 2,
                 useCORS: true,
                 scrollY: 0,
-                scrollX: 0,
-                logging: true // Helps debug in console if it ever fails again
+                scrollX: 0
             },
             jsPDF: { unit: 'px', format: [800, 1131], orientation: 'portrait' }
         };
 
-        html2pdf().set(opt).from(el).save().then(() => {
-            // 5. Restore all original constraints immediately after saving
+        // NEW FIX: We intervene here to delete Page 2 before it saves
+        html2pdf().set(opt).from(el).toPdf().get('pdf').then(function (pdf) {
+            const totalPages = pdf.internal.getNumberOfPages();
+            for (let i = totalPages; i > 1; i--) {
+                pdf.deletePage(i);
+            }
+        }).save().then(() => {
+            // Restore original constraints immediately after saving
             el.style.transform = oldTransform;
             el.style.position = oldPosition || 'absolute';
             body.style.overflow = oldBodyOverflow || '';
@@ -407,7 +410,7 @@ function finalSave() {
             body.style.overflow = oldBodyOverflow || '';
             main.style.overflow = oldMainOverflow || '';
             adjustMobileScale();
-            showNotification("Download Failed. Check Console. 🔴");
+            showNotification("Download Failed. 🔴");
         });
     }, 300); 
 }
