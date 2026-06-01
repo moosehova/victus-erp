@@ -339,7 +339,7 @@ function sync() {
         const vat = sub * taxRate;
         document.getElementById('pSub').innerText = "ZMW " + sub.toLocaleString(undefined, { minimumFractionDigits: 2 });
         document.getElementById('pVat').innerText = "ZMW " + vat.toLocaleString(undefined, { minimumFractionDigits: 2 });
-        document.getElementById('pTotal').innerText = "ZMW " + (sub + vat).toLocaleString(undefined, { minimumFractionDigits: 2 });
+        document.getElementById('pTotal').innerText = (sub + vat).toLocaleString(undefined, { minimumFractionDigits: 2 });
     } else {
         const product = document.getElementById('dr-product').value || '_______';
         const qty = document.getElementById('dr-qty').value || '_______';
