@@ -315,6 +315,11 @@ function sync() {
     document.getElementById('pAddr').innerText = document.getElementById('address').value;
     document.getElementById('pDate').innerText = document.getElementById('docDate').value || new Date().toLocaleDateString('en-ZM');
     document.getElementById('pSales').innerText = document.getElementById('salesRep').value;
+    
+    // Sync the delivery method input to the document
+    if (document.getElementById('pMethod')) {
+        document.getElementById('pMethod').innerText = document.getElementById('delMethod').value || '-';
+    }
 
     if (curDocType !== 'Deal Recap') {
         const rows = document.querySelectorAll('.item-row');
@@ -349,24 +354,62 @@ function sync() {
 }
 
 function finalSave() {
-    showNotification("Generating PDF...");
-    const el = document.getElementById('pdfArea');
-    const oldTransform = el.style.transform;
-    el.style.transform = 'scale(1)';
+    showNotification("Preparing PDF...");
 
-    html2pdf().from(el).set({
-        margin: 0,
-        filename: `Victus_${curDocType}_${document.getElementById('docNum').value}.pdf`,
-        html2canvas: { scale: 3, useCORS: true, scrollY: 0 },
-        jsPDF: { unit: 'px', format: [800, 1131], orientation: 'portrait' }
-    }).toPdf().get('pdf').then(pdf => {
-        const pages = pdf.internal.getNumberOfPages();
-        for (let i = pages; i > 1; i--) { pdf.deletePage(i); }
-    }).save().then(() => {
-        el.style.transform = oldTransform;
-        adjustMobileScale();
-        showNotification("Download Complete!");
-    });
+    // 1. Force the window to the top to prevent scroll offset bugs
+    window.scrollTo(0, 0);
+
+    const el = document.getElementById('pdfArea');
+    const main = document.querySelector('main');
+    const body = document.body;
+
+    // 2. Store original styles to restore them perfectly later
+    const oldTransform = el.style.transform;
+    const oldPosition = el.style.position;
+    const oldBodyOverflow = body.style.overflow;
+    const oldMainOverflow = main.style.overflow;
+
+    // 3. STRIP THE CONSTRAINTS: Remove absolute positioning and hidden overflows
+    el.style.transform = 'scale(1)';
+    el.style.position = 'relative'; 
+    body.style.overflow = 'visible';
+    main.style.overflow = 'visible';
+
+    // 4. Give the browser 300ms to repaint the unlocked DOM
+    setTimeout(() => {
+        const opt = {
+            margin: 0,
+            filename: `Victus_${curDocType}_${document.getElementById('docNum').value}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { 
+                scale: 2,
+                useCORS: true,
+                scrollY: 0,
+                scrollX: 0,
+                logging: true // Helps debug in console if it ever fails again
+            },
+            jsPDF: { unit: 'px', format: [800, 1131], orientation: 'portrait' }
+        };
+
+        html2pdf().set(opt).from(el).save().then(() => {
+            // 5. Restore all original constraints immediately after saving
+            el.style.transform = oldTransform;
+            el.style.position = oldPosition || 'absolute';
+            body.style.overflow = oldBodyOverflow || '';
+            main.style.overflow = oldMainOverflow || '';
+            adjustMobileScale();
+            showNotification("Download Complete! 🟢");
+        }).catch(err => {
+            console.error("PDF Engine Error:", err);
+            // Ensure UI is restored even if an error occurs
+            el.style.transform = oldTransform;
+            el.style.position = oldPosition || 'absolute';
+            body.style.overflow = oldBodyOverflow || '';
+            main.style.overflow = oldMainOverflow || '';
+            adjustMobileScale();
+            showNotification("Download Failed. Check Console. 🔴");
+        });
+    }, 300); 
 }
 
 function toggleMenu() {
