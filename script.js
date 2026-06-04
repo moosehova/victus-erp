@@ -220,6 +220,14 @@ function applySettings() {
                 setText('p-set-swift', config.swift_code || '-');
                 setText('p-set-sort', config.sort_code || '-');
                 setText('p-set-currency', config.currency || '-');
+                setText('p-set-acc-name', config.account_name || '-');
+                setText('p-set-bank', config.bank_name || '-');
+                setText('p-set-account', config.account_number || '-');
+                setText('p-set-branch', config.branch_name || '-');
+                setText('p-set-branch-code', config.branch_code || '-');
+                setText('p-set-swift', config.swift_code || '-');
+                setText('p-set-sort', config.sort_code || '-');
+                setText('p-set-currency', config.currency || '-');
 
                 // Signature handling
                 if (config.signature && config.signature !== 'null') {
