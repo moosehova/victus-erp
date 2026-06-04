@@ -268,6 +268,8 @@ async function saveToNeon() {
         ref_no: document.getElementById('docNum').value,
         doc_type: curDocType,
         client_name: document.getElementById('clientName').value || 'Unknown',
+        client_tpin: document.getElementById('clientTpin') ? document.getElementById('clientTpin').value : '',
+        client_reg_no: document.getElementById('clientReg') ? document.getElementById('clientReg').value : '',
         address: document.getElementById('address').value || '',
         representative: document.getElementById('salesRep').value || '',
         items: itemsArray,
@@ -584,7 +586,7 @@ function renderDashboardTable(docs) {
                 <td class="py-4 px-6">${statusBadge}</td>
                 <td class="py-4 px-6 text-right font-black text-blue-700">ZMW ${amt.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                 <td class="py-4 px-6 text-center space-x-2">
-                    <button onclick="viewDocument('${docJson}')" class="text-xs bg-blue-600 text-white px-3 py-1.5 rounded-lg font-bold hover:bg-blue-500 transition-colors">View</button>
+                    <button onclick="editDocument('${docJson}')" class="text-xs bg-blue-600 text-white px-3 py-1.5 rounded-lg font-bold hover:bg-blue-500 transition-colors">Edit</button>
                     <button onclick="cloneDoc('${docJson}')" class="text-xs bg-slate-900 text-white px-3 py-1.5 rounded-lg font-bold hover:bg-blue-600 transition-colors">Clone</button>
                     <button onclick="deleteDocument(${doc.id})" class="text-xs bg-red-600 text-white px-3 py-1.5 rounded-lg font-bold hover:bg-red-500 transition-colors">Delete</button>
                 </td>
@@ -627,6 +629,48 @@ function cloneDoc(encodedJson) {
     document.getElementById('docDate').value = new Date().toISOString().split('T')[0];
     showNotification(`Cloned ${doc.doc_type} for ${doc.client_name}`);
     sync();
+}
+
+function editDocument(encodedJson) {
+    const doc = JSON.parse(decodeURIComponent(encodedJson));
+    const editorBtn = document.querySelector(`button[onclick*="setDoc('${doc.doc_type}'"`) || document.querySelector('.nav-btn');
+    
+    // 1. Switch to editor view
+    switchView('editor', editorBtn);
+    setDoc(doc.doc_type, editorBtn);
+
+    // 2. Load the client data
+    document.getElementById('clientName').value = doc.client_name || '';
+    document.getElementById('address').value = doc.address || '';
+    document.getElementById('salesRep').value = doc.representative || '';
+    
+    // 3. CRITICAL: Lock in the original Reference Number so it overwrites in the database
+    document.getElementById('docNum').value = doc.ref_no;
+    document.getElementById('pRef').innerText = "REF: " + doc.ref_no;
+    
+    // 4. Load the items
+    document.getElementById('itemList').innerHTML = '';
+    if(doc.items && Array.isArray(doc.items)) {
+        doc.items.forEach(item => {
+            addRow();
+            const rows = document.querySelectorAll('.item-row');
+            const lastRow = rows[rows.length - 1];
+            lastRow.querySelector('.i-desc').value = item.description || '';
+            lastRow.querySelector('.i-qty').value = item.qty || 0;
+            lastRow.querySelector('.i-price').value = item.price || 0;
+        });
+    }
+
+    // 5. Load Contract Details if it's a Deal Recap
+    if(doc.doc_type === 'Deal Recap' && doc.contract_details) {
+        Object.keys(doc.contract_details).forEach(key => {
+            const el = document.getElementById(`dr-${key}`);
+            if(el) el.value = doc.contract_details[key];
+        });
+    }
+
+    sync();
+    showNotification(`Editing Document: ${doc.ref_no}`);
 }
 
 function viewDocument(encodedJson) {
