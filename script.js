@@ -135,6 +135,7 @@ async function saveSettings() {
     const getValue = id => document.getElementById(id)?.value || '';
     const config = {
         tpin: getValue('set-tpin'),
+        reg_no: getValue('set-reg-no'),
         tax_rate: getValue('set-tax'),
         account_name: getValue('set-acc-name'),
         bank_name: getValue('set-bank'),
@@ -196,6 +197,7 @@ function applySettings() {
 
                 // Fill Settings Form
                 setInput('set-tpin', config.tpin);
+                setInput('set-reg-no', config.reg_no);
                 setInput('set-tax', config.tax_rate);
                 setInput('set-acc-name', config.account_name);
                 setInput('set-bank', config.bank_name);
@@ -209,6 +211,7 @@ function applySettings() {
                 // Update Preview Header & Footer dynamically (No hardcoding)
                 setText('pVatRate', savedTax);
                 setText('p-set-tpin', config.tpin || '-');
+                setText('p-set-reg-no', config.reg_no || '-');
                 setText('p-set-acc-name', config.account_name || '-');
                 setText('p-set-bank', config.bank_name || '-');
                 setText('p-set-account', config.account_number || '-');
@@ -319,6 +322,27 @@ function sync() {
     // Sync the delivery method input to the document
     if (document.getElementById('pMethod')) {
         document.getElementById('pMethod').innerText = document.getElementById('delMethod').value || '-';
+    }
+
+    // NEW: Sync Client TPIN and Reg No
+    const cTpin = document.getElementById('clientTpin') ? document.getElementById('clientTpin').value : '';
+    const cReg = document.getElementById('clientReg') ? document.getElementById('clientReg').value : '';
+    const metaContainer = document.getElementById('pClientMeta');
+    
+    if (metaContainer) {
+        if (cTpin || cReg) {
+            metaContainer.classList.remove('hidden');
+            
+            const tpinWrap = document.getElementById('pClientTpinWrapper');
+            if (cTpin) { tpinWrap.classList.remove('hidden'); document.getElementById('pClientTpin').innerText = cTpin; } 
+            else { tpinWrap.classList.add('hidden'); }
+
+            const regWrap = document.getElementById('pClientRegWrapper');
+            if (cReg) { regWrap.classList.remove('hidden'); document.getElementById('pClientReg').innerText = cReg; } 
+            else { regWrap.classList.add('hidden'); }
+        } else {
+            metaContainer.classList.add('hidden');
+        }
     }
 
     if (curDocType !== 'Deal Recap') {
