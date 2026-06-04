@@ -5,6 +5,7 @@
 CREATE TABLE IF NOT EXISTS erp_config (
     id SERIAL PRIMARY KEY,
     tpin TEXT,
+    reg_no TEXT,
     tax_rate TEXT,
     bank_name TEXT,
     account_number TEXT,
@@ -25,6 +26,8 @@ CREATE TABLE IF NOT EXISTS documents (
     ref_no TEXT UNIQUE NOT NULL,
     doc_type TEXT NOT NULL, -- 'Quotation', 'Invoice', 'Deal Recap', etc.
     client_name TEXT NOT NULL,
+    client_tpin TEXT,
+    client_reg_no TEXT,
     address TEXT,
     representative TEXT,
     items JSONB, -- Array of item objects

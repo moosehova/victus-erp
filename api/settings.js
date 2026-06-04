@@ -16,10 +16,11 @@ export default async function handler(req, res) {
         const data = req.body;
         try {
             await sql`
-                INSERT INTO erp_config (id, tpin, tax_rate, bank_name, account_number, account_name, branch_name, branch_code, swift_code, sort_code, currency, signature)
-                VALUES (1, ${data.tpin}, ${data.tax_rate}, ${data.bank_name}, ${data.account_number}, ${data.account_name}, ${data.branch_name}, ${data.branch_code}, ${data.swift_code}, ${data.sort_code}, ${data.currency}, ${data.signature})
+                INSERT INTO erp_config (id, tpin, reg_no, tax_rate, bank_name, account_number, account_name, branch_name, branch_code, swift_code, sort_code, currency, signature)
+                VALUES (1, ${data.tpin}, ${data.reg_no}, ${data.tax_rate}, ${data.bank_name}, ${data.account_number}, ${data.account_name}, ${data.branch_name}, ${data.branch_code}, ${data.swift_code}, ${data.sort_code}, ${data.currency}, ${data.signature})
                 ON CONFLICT (id) DO UPDATE SET 
                     tpin = EXCLUDED.tpin,
+                    reg_no = EXCLUDED.reg_no,
                     tax_rate = EXCLUDED.tax_rate,
                     bank_name = EXCLUDED.bank_name,
                     account_number = EXCLUDED.account_number,

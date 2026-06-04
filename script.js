@@ -585,10 +585,11 @@ function renderDashboardTable(docs) {
                 <td class="py-4 px-6 font-medium text-slate-700">${doc.client_name}</td>
                 <td class="py-4 px-6">${statusBadge}</td>
                 <td class="py-4 px-6 text-right font-black text-blue-700">ZMW ${amt.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                <td class="py-4 px-6 text-center space-x-2">
-                    <button onclick="editDocument('${docJson}')" class="text-xs bg-blue-600 text-white px-3 py-1.5 rounded-lg font-bold hover:bg-blue-500 transition-colors">Edit</button>
-                    <button onclick="cloneDoc('${docJson}')" class="text-xs bg-slate-900 text-white px-3 py-1.5 rounded-lg font-bold hover:bg-blue-600 transition-colors">Clone</button>
-                    <button onclick="deleteDocument(${doc.id})" class="text-xs bg-red-600 text-white px-3 py-1.5 rounded-lg font-bold hover:bg-red-500 transition-colors">Delete</button>
+                <td class="py-4 px-6 text-center flex justify-center gap-2">
+                    <button onclick="viewDocument('${docJson}')" class="text-[10px] bg-slate-100 text-slate-700 px-3 py-1.5 rounded-lg font-bold hover:bg-slate-200 transition-colors uppercase tracking-wider border border-slate-200">Preview</button>
+                    <button onclick="editDocument('${docJson}')" class="text-[10px] bg-blue-600 text-white px-3 py-1.5 rounded-lg font-bold hover:bg-blue-500 transition-colors uppercase tracking-wider">Edit</button>
+                    <button onclick="cloneDoc('${docJson}')" class="text-[10px] bg-slate-800 text-white px-3 py-1.5 rounded-lg font-bold hover:bg-slate-700 transition-colors uppercase tracking-wider">Clone</button>
+                    <button onclick="deleteDocument(${doc.id})" class="text-[10px] bg-red-50 text-red-600 px-3 py-1.5 rounded-lg font-bold hover:bg-red-100 transition-colors uppercase tracking-wider border border-red-200">Del</button>
                 </td>
             </tr>
         `;
