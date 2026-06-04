@@ -401,6 +401,9 @@ function finalSave() {
     main.style.overflow = 'visible';
 
     setTimeout(() => {
+        // NEW FIX: Measure the exact height of the document down to the pixel
+        const trueHeight = Math.max(el.scrollHeight, 1131);
+
         const opt = {
             margin: 0,
             filename: `Victus_${curDocType}_${document.getElementById('docNum').value}.pdf`,
@@ -411,22 +414,18 @@ function finalSave() {
                 scrollY: 0,
                 scrollX: 0
             },
-            jsPDF: { unit: 'px', format: [800, 1131], orientation: 'portrait' }
+            // Tell the PDF to make ONE page that exactly matches the true height
+            jsPDF: { unit: 'px', format: [800, trueHeight], orientation: 'portrait' }
         };
 
-        // NEW FIX: We intervene here to delete Page 2 before it saves
-        html2pdf().set(opt).from(el).toPdf().get('pdf').then(function (pdf) {
-            const totalPages = pdf.internal.getNumberOfPages();
-            for (let i = totalPages; i > 1; i--) {
-                pdf.deletePage(i);
-            }
-        }).save().then(() => {
+        // Notice we removed the "deletePage" loop completely! Just save directly.
+        html2pdf().set(opt).from(el).save().then(() => {
             // Restore original constraints immediately after saving
             el.style.transform = oldTransform;
             el.style.position = oldPosition || 'absolute';
             body.style.overflow = oldBodyOverflow || '';
             main.style.overflow = oldMainOverflow || '';
-            adjustMobileScale();
+            if (typeof adjustMobileScale === 'function') adjustMobileScale();
             showNotification("Download Complete! 🟢");
         }).catch(err => {
             console.error("PDF Engine Error:", err);
@@ -435,7 +434,7 @@ function finalSave() {
             el.style.position = oldPosition || 'absolute';
             body.style.overflow = oldBodyOverflow || '';
             main.style.overflow = oldMainOverflow || '';
-            adjustMobileScale();
+            if (typeof adjustMobileScale === 'function') adjustMobileScale();
             showNotification("Download Failed. 🔴");
         });
     }, 300); 
