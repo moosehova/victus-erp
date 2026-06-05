@@ -2,7 +2,7 @@ import { neon } from '@neondatabase/serverless';
 
 export default async function handler(req, res) {
     // 1. Setup connection using the environment variable
-    const sql = neon(process.env.POSTGRES_URL);
+    const sql = neon(process.env.DATABASE_URL);
     
     // 2. Parse query parameters
     const url = new URL(req.url, `http://${req.headers.host}`);
