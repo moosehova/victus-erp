@@ -18,35 +18,34 @@ async function attemptLogin() {
     if (!passwordInput) return;
 
     try {
-                // Ask the database for the next number for this specific document type
-                const response = await fetch(`/api/next-num?type=${encodeURIComponent(type)}`);
-                const data = await response.json();
-                
-                if (data.success) {
-                    // CHANGE THIS LINE: Update the global variable, not just the input!
-                    currentRefNumber = data.nextNumber; 
-                } else {
-                    docNumInput.value = ''; // Fallback
-                }
-            } catch (error) {
-                console.error("Failed to auto-generate number:", error);
-                docNumInput.value = ''; // Fallback
-            }
-}
+        // THIS IS THE MISSING LOGIN FETCH CODE
+        const response = await fetch('/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password: passwordInput })
+        });
 
-// Optional: A Logout Function you can attach to a button in your sidebar
-function logout() {
-    localStorage.removeItem('erp_auth_token');
-    document.getElementById('erp-password').value = '';
-    document.getElementById('main-app').classList.add('hidden');
-    document.getElementById('login-view').classList.remove('hidden');
-    showNotification("System Locked 🔴");
-}
+        const data = await response.json();
 
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js').then(() => {
-        console.log("Service Worker Registered");
-    });
+        if (data.success) {
+            // Save token to browser
+            localStorage.setItem('erp_auth_token', data.token);
+            
+            // Swap views
+            document.getElementById('login-view').classList.add('hidden');
+            document.getElementById('main-app').classList.remove('hidden');
+            
+            errorText.classList.add('hidden');
+            showNotification("System Unlocked 🟢");
+        } else {
+            errorText.innerText = data.message || "Incorrect Password";
+            errorText.classList.remove('hidden');
+        }
+    } catch (error) {
+        console.error("Login Error:", error);
+        errorText.innerText = "Network Error. Try again.";
+        errorText.classList.remove('hidden');
+    }
 }
 
 let currentRefNumber = 1100;
