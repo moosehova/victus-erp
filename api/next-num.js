@@ -1,8 +1,17 @@
 import { neon } from '@neondatabase/serverless';
 
 export default async function handler(req, res) {
-    // 1. Setup connection using the environment variable
-    const sql = neon(process.env.DATABASE_URL);
+    // Force a check if the URL is even present
+    const dbUrl = process.env.POSTGRES_URL || process.env.DATABASE_URL;
+    
+    if (!dbUrl) {
+        console.error("CRITICAL: Database URL is missing from Environment Variables!");
+        return res.status(500).json({ success: false, error: "Database configuration missing" });
+    }
+
+    const sql = neon(dbUrl);
+    
+    // ... rest of your existing logic ...
     
     // 2. Parse query parameters
     const url = new URL(req.url, `http://${req.headers.host}`);
