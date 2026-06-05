@@ -8,31 +8,34 @@ export default async function handler(req, res) {
     const { type } = req.query;
 
     try {
+        // Log the type so we can see what's being requested
+        console.log("Fetching next number for type:", type);
+
+        // Double check this table name exists exactly like this in your Neon SQL Editor
         const result = await sql`
             SELECT ref_no 
             FROM documents 
-            WHERE type = ${type} 
+            WHERE doc_type = ${type} 
             ORDER BY id DESC 
             LIMIT 1;
         `;
 
-        let nextNumber = 1100; // Default starting number
+        let nextNumber = 1100;
 
-        // FIX: We must look inside result.rows for Vercel Postgres!
         if (result.rows && result.rows.length > 0 && result.rows[0].ref_no) {
-            
-            // Strip away letters (like VEL-INV-) and grab the numbers
             const currentNumStr = result.rows[0].ref_no.toString().replace(/\D/g, '');
-            
             if (currentNumStr) {
-                nextNumber = parseInt(currentNumStr, 10) + 1; // Add 1
+                nextNumber = parseInt(currentNumStr, 10) + 1;
             }
         }
 
         return res.status(200).json({ success: true, nextNumber });
         
     } catch (error) {
-        console.error("Database Error:", error);
-        return res.status(500).json({ success: false, message: 'Failed to fetch next number' });
+        // This will print the actual SQL error to your Vercel Logs
+        console.error("CRITICAL DATABASE ERROR in next-num.js:", error);
+        
+        // Return a valid JSON response even on error so your frontend doesn't crash
+        return res.status(200).json({ success: false, nextNumber: 1100 });
     }
 }
