@@ -8,10 +8,10 @@ export default async function handler(req, res) {
     const { type } = req.query;
 
     try {
-        // Log the type so we can see what's being requested
-        console.log("Fetching next number for type:", type);
+        console.log("Fetching next number for doc_type:", type);
 
-        // Double check this table name exists exactly like this in your Neon SQL Editor
+        // Updated to use the correct column name 'doc_type' 
+        // as seen in your Neon SQL Editor screenshot
         const result = await sql`
             SELECT ref_no 
             FROM documents 
@@ -23,6 +23,7 @@ export default async function handler(req, res) {
         let nextNumber = 1100;
 
         if (result.rows && result.rows.length > 0 && result.rows[0].ref_no) {
+            // Strip non-numeric characters and increment
             const currentNumStr = result.rows[0].ref_no.toString().replace(/\D/g, '');
             if (currentNumStr) {
                 nextNumber = parseInt(currentNumStr, 10) + 1;
@@ -32,10 +33,8 @@ export default async function handler(req, res) {
         return res.status(200).json({ success: true, nextNumber });
         
     } catch (error) {
-        // This will print the actual SQL error to your Vercel Logs
         console.error("CRITICAL DATABASE ERROR in next-num.js:", error);
-        
-        // Return a valid JSON response even on error so your frontend doesn't crash
-        return res.status(200).json({ success: false, nextNumber: 1100 });
+        // Returning a 500 status code with JSON so the frontend doesn't crash on 'A'
+        return res.status(500).json({ success: false, message: 'Database error occurred' });
     }
 }
