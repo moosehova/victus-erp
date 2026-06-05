@@ -528,14 +528,15 @@ function finalSave() {
         const opt = {
             margin: 0,
             filename: `Victus_${curDocType}_${document.getElementById('docNum').value}.pdf`,
-            image: { type: 'jpeg', quality: 0.98 },
+            image: { type: 'jpeg', quality: 1.0 }, // Maximum factory quality
             html2canvas: { 
-                scale: 2,
+                scale: 4, // Retina-level precision
                 useCORS: true,
                 scrollY: 0,
-                scrollX: 0
+                scrollX: 0,
+                letterRendering: true // Crisper text boundaries
             },
-            // Tell the PDF to make ONE page that exactly matches the true height
+            // Tell the PDF to make ONE rigid page that exactly matches the true height
             jsPDF: { unit: 'px', format: [800, trueHeight], orientation: 'portrait' }
         };
 
@@ -884,29 +885,68 @@ function confirmDelete() {
 function renderChart(docs) {
     const ctx = document.getElementById('revenueChart').getContext('2d');
     if (revChart) revChart.destroy();
-    const recentDocs = [...docs].reverse().slice(-10);
-    const labels = recentDocs.map(d => d.ref_no.split('-')[2] || d.ref_no);
-    const data = recentDocs.map(d => parseFloat(String(d.total_amount).replace(/,/g, '')) || 0);
+    
+    // Generate labels for the last 7 days
+    const labels = [];
+    const invoices = [0, 0, 0, 0, 0, 0, 0];
+    const quotes = [0, 0, 0, 0, 0, 0, 0];
+    
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        labels.push(d.toLocaleDateString('en-US', { weekday: 'short' }));
+    }
+
+    const today = new Date();
+    today.setHours(23, 59, 59, 999); // End of today
+    
+    docs.forEach(d => {
+        if (!d.created_at) return;
+        
+        const docDate = new Date(d.created_at);
+        const diffTime = today - docDate;
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        
+        if (diffDays >= 0 && diffDays < 7) {
+            const idx = 6 - diffDays;
+            if (d.doc_type === 'Quotation') {
+                quotes[idx]++;
+            } else if (d.doc_type === 'Invoice' || d.doc_type === 'Proforma Invoice') {
+                invoices[idx]++;
+            }
+        }
+    });
 
     revChart = new Chart(ctx, {
-        type: 'line',
+        type: 'bar',
         data: {
             labels: labels,
-            datasets: [{
-                label: 'Revenue (ZMW)',
-                data: data,
-                borderColor: '#2563EB',
-                backgroundColor: 'rgba(37, 99, 235, 0.1)',
-                borderWidth: 3,
-                fill: true,
-                tension: 0.4
-            }]
+            datasets: [
+                {
+                    label: 'Quotations',
+                    data: quotes,
+                    backgroundColor: '#94A3B8',
+                    borderRadius: 4
+                },
+                {
+                    label: 'Invoices',
+                    data: invoices,
+                    backgroundColor: '#2563EB',
+                    borderRadius: 4
+                }
+            ]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: { x: { display: false }, y: { beginAtZero: true } }
+            plugins: { 
+                legend: { display: true, position: 'top' },
+                tooltip: { mode: 'index', intersect: false }
+            },
+            scales: { 
+                x: { grid: { display: false } }, 
+                y: { beginAtZero: true, ticks: { stepSize: 1 } } 
+            }
         }
     });
 }
