@@ -108,6 +108,7 @@ function updateDocNumber() {
     if (curDocType === 'Quotation') prefix = 'QT';
     if (curDocType === 'Delivery Note') prefix = 'DN';
     if (curDocType === 'Deal Recap') prefix = 'DR';
+    if (curDocType === 'Local Purchase Order') prefix = 'PO';
 
     const finalRef = `VEL-${prefix}-${currentRefNumber}`;
     document.getElementById('docNum').value = finalRef;
@@ -399,12 +400,18 @@ async function saveToNeon() {
     };
 
     try {
+        showNotification("Archiving to Neon...");
+        const btn = document.querySelector('button[onclick="saveToNeon()"]');
+        if (btn) btn.disabled = true;
+
         const res = await fetch('/api/save-to-neon', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(docData)
         });
         const response = await res.json();
+        
+        if (btn) btn.disabled = false;
         if (res.ok && response.success) {
             showNotification("Document Archived to Neon 🟢");
             currentRefNumber++;
