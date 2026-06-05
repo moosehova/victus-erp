@@ -132,6 +132,24 @@ function updateDocNumber() {
 }
 
 function setDoc(type, btn) {
+    // 1. WIPE THE SLATE CLEAN EVERY TIME WE SWITCH TABS
+    if (document.getElementById('clientName')) document.getElementById('clientName').value = '';
+    if (document.getElementById('address')) document.getElementById('address').value = '';
+    if (document.getElementById('clientTpin')) document.getElementById('clientTpin').value = '';
+    if (document.getElementById('clientReg')) document.getElementById('clientReg').value = '';
+    if (document.getElementById('delMethod')) document.getElementById('delMethod').value = '';
+    
+    // 2. RESET THE ITEMS LIST TO ONE BLANK ROW
+    if (document.getElementById('itemList')) {
+        document.getElementById('itemList').innerHTML = '';
+        if (typeof addRow === 'function') addRow(); 
+    }
+
+    // 3. GENERATE A NEW RANDOM REFERENCE NUMBER TO PREVENT OVERWRITES
+    if (document.getElementById('docNum')) {
+        document.getElementById('docNum').value = Math.floor(1000 + Math.random() * 9000);
+    }
+
     curDocType = type;
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
     if (btn) btn.classList.add('active');
