@@ -131,24 +131,49 @@ function updateDocNumber() {
     document.getElementById('pRef').innerText = "REF: " + finalRef;
 }
 
-function setDoc(type, btn) {
-    // 1. WIPE THE SLATE CLEAN EVERY TIME WE SWITCH TABS
-    if (document.getElementById('clientName')) document.getElementById('clientName').value = '';
-    if (document.getElementById('address')) document.getElementById('address').value = '';
-    if (document.getElementById('clientTpin')) document.getElementById('clientTpin').value = '';
-    if (document.getElementById('clientReg')) document.getElementById('clientReg').value = '';
-    if (document.getElementById('delMethod')) document.getElementById('delMethod').value = '';
+// Add 'async' to the function so it can wait for the database
+async function setDoc(type, btn, isEdit = false) {
     
-    // 2. RESET THE ITEMS LIST TO ONE BLANK ROW
-    if (document.getElementById('itemList')) {
-        document.getElementById('itemList').innerHTML = '';
-        if (typeof addRow === 'function') addRow(); 
-    }
+    // ONLY wipe and auto-number if we are NOT editing
+    if (!isEdit) {
+        // WIPE THE SLATE CLEAN
+        if (document.getElementById('clientName')) document.getElementById('clientName').value = '';
+        if (document.getElementById('address')) document.getElementById('address').value = '';
+        if (document.getElementById('clientTpin')) document.getElementById('clientTpin').value = '';
+        if (document.getElementById('clientReg')) document.getElementById('clientReg').value = '';
+        if (document.getElementById('delMethod')) document.getElementById('delMethod').value = '';
+        
+        // RESET ITEMS TO ONE BLANK ROW
+        if (document.getElementById('itemList')) {
+            document.getElementById('itemList').innerHTML = '';
+            if (typeof addRow === 'function') addRow(); 
+        }
 
-    // 3. GENERATE A NEW RANDOM REFERENCE NUMBER TO PREVENT OVERWRITES
-    if (document.getElementById('docNum')) {
-        document.getElementById('docNum').value = Math.floor(1000 + Math.random() * 9000);
-        document.getElementById('docNum').removeAttribute('data-editing'); // Clear editing flag for new documents
+        // RESET EDIT LOCK (Tell the app this is a brand new document)
+        if (document.getElementById('docNum')) {
+            document.getElementById('docNum').removeAttribute('data-editing');
+        }
+
+        // AUTOMATED NUMBER GENERATION
+        const docNumInput = document.getElementById('docNum');
+        if (docNumInput) {
+            docNumInput.value = 'Syncing...'; // Show the user it's thinking
+            
+            try {
+                // Ask the database for the next number for this specific document type
+                const response = await fetch(`/api/next-num?type=${encodeURIComponent(type)}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    docNumInput.value = data.nextNumber;
+                } else {
+                    docNumInput.value = ''; // Fallback
+                }
+            } catch (error) {
+                console.error("Failed to auto-generate number:", error);
+                docNumInput.value = ''; // Fallback
+            }
+        }
     }
 
     curDocType = type;
@@ -750,7 +775,7 @@ function editDocument(encodedJson) {
     
     // 1. Switch to editor view
     switchView('editor', editorBtn);
-    setDoc(doc.doc_type, editorBtn);
+    setDoc(doc.doc_type, editorBtn, true); // Pass true for isEdit so it doesn't wipe the form
 
     // 2. Load the client data
     document.getElementById('clientName').value = doc.client_name || '';
