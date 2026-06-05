@@ -1,3 +1,64 @@
+// --- AUTHENTICATION SYSTEM ---
+// Check auth status on load
+document.addEventListener('DOMContentLoaded', () => {
+    const token = localStorage.getItem('erp_auth_token');
+    if (token) {
+        document.getElementById('login-view').classList.add('hidden');
+        document.getElementById('main-app').classList.remove('hidden');
+        // Call your initialization functions here if needed:
+        // loadDashboard(); 
+    }
+});
+
+// The Login Function
+async function attemptLogin() {
+    const passwordInput = document.getElementById('erp-password').value;
+    const errorText = document.getElementById('login-error');
+    
+    if (!passwordInput) return;
+
+    try {
+        const response = await fetch('/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password: passwordInput })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            // Save token to browser
+            localStorage.setItem('erp_auth_token', data.token);
+            
+            // Swap views
+            document.getElementById('login-view').classList.add('hidden');
+            document.getElementById('main-app').classList.remove('hidden');
+            
+            errorText.classList.add('hidden');
+            showNotification("System Unlocked 🟢");
+            
+            // Refresh data if needed
+            // loadDashboard();
+        } else {
+            errorText.innerText = data.message || "Incorrect Password";
+            errorText.classList.remove('hidden');
+        }
+    } catch (error) {
+        console.error("Login Error:", error);
+        errorText.innerText = "Network Error. Try again.";
+        errorText.classList.remove('hidden');
+    }
+}
+
+// Optional: A Logout Function you can attach to a button in your sidebar
+function logout() {
+    localStorage.removeItem('erp_auth_token');
+    document.getElementById('erp-password').value = '';
+    document.getElementById('main-app').classList.add('hidden');
+    document.getElementById('login-view').classList.remove('hidden');
+    showNotification("System Locked 🔴");
+}
+
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js').then(() => {
         console.log("Service Worker Registered");

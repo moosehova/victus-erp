@@ -15,6 +15,24 @@
 
 <body class="bg-[#0F172A] h-screen w-screen overflow-hidden p-0 lg:p-4 flex gap-0 lg:gap-4">
 
+    <!-- LOGIN SCREEN -->
+    <div id="login-view" class="fixed inset-0 bg-slate-900 z-50 flex items-center justify-center">
+        <div class="bg-white p-8 rounded-3xl shadow-2xl w-96 text-center">
+            <h2 class="text-2xl font-black text-slate-800 mb-2 uppercase tracking-widest">System Lock</h2>
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6">Enter Administrator Password</p>
+            
+            <input type="password" id="erp-password" placeholder="••••••••" class="input-box text-center text-lg mb-4" onkeypress="if(event.key === 'Enter') attemptLogin()">
+            
+            <button onclick="attemptLogin()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold uppercase tracking-widest hover:bg-blue-500 transition-colors">
+                Unlock
+            </button>
+            <p id="login-error" class="text-red-500 text-xs font-bold mt-4 hidden">Incorrect Password</p>
+        </div>
+    </div>
+
+    <!-- MAIN APP (hidden until authenticated) -->
+    <div id="main-app" class="hidden w-full h-full flex gap-0 lg:gap-4">
+
     <div id="overlay" class="overlay" onclick="toggleMenu()"></div>
 
     <button onclick="toggleMenu()"
@@ -414,6 +432,7 @@
             </div>
         </div>
     </div>
+    </div> <!-- Close main-app div -->
 
     <script src="script.js"></script>
 </body>
