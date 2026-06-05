@@ -14,8 +14,7 @@ export default async function handler(req, res) {
     // ... rest of your existing logic ...
     
     // 2. Parse query parameters
-    const url = new URL(req.url, `http://${req.headers.host}`);
-    const type = url.searchParams.get('type');
+    const type = req.query?.type || '';
 
     try {
         // 3. Query the database
@@ -37,15 +36,13 @@ export default async function handler(req, res) {
         }
 
         // 4. Return success
-        res.setHeader('Content-Type', 'application/json');
-        return res.end(JSON.stringify({ success: true, nextNumber: nextNumber }));
+        return res.status(200).json({ success: true, nextNumber: nextNumber });
         
     } catch (error) {
         console.error("Database Query Failed:", error);
-        res.setHeader('Content-Type', 'application/json');
-        return res.end(JSON.stringify({ 
+        return res.status(500).json({ 
             success: false, 
-            error: error.message 
-        }));
+            error: error.message || "Unknown database error"
+        });
     }
 }
