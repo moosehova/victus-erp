@@ -806,13 +806,8 @@ function editDocument(encodedJson) {
 function viewDocument(encodedJson) {
     const doc = JSON.parse(decodeURIComponent(encodedJson));
 
-    document.getElementById('clientName').value = doc.client_name || '';
-    document.getElementById('address').value = doc.address || '';
-    document.getElementById('salesRep').value = doc.representative || '';
-    document.getElementById('itemList').innerHTML = '';
-
     if (doc.doc_type === 'Deal Recap') {
-        setDoc('Deal Recap', null);
+        setDoc('Deal Recap', null, true);
         if (doc.contract_details) {
             Object.keys(doc.contract_details).forEach(key => {
                 const el = document.getElementById(`dr-${key}`);
@@ -820,7 +815,7 @@ function viewDocument(encodedJson) {
             });
         }
     } else {
-        setDoc(doc.doc_type, null);
+        setDoc(doc.doc_type, null, true);
         if (doc.items && Array.isArray(doc.items) && doc.items.length > 0) {
             doc.items.forEach(item => {
                 addRow();
@@ -834,6 +829,13 @@ function viewDocument(encodedJson) {
             addRow();
         }
     }
+
+    document.getElementById('clientName').value = doc.client_name || '';
+    if (document.getElementById('clientTpin')) document.getElementById('clientTpin').value = doc.client_tpin || '';
+    if (document.getElementById('clientReg')) document.getElementById('clientReg').value = doc.client_reg_no || '';
+    document.getElementById('address').value = doc.address || '';
+    document.getElementById('salesRep').value = doc.representative || '';
+    document.getElementById('pRef').innerText = "REF: " + doc.ref_no;
 
     document.getElementById('docDate').value = doc.created_at ? new Date(doc.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
     switchView('preview-only', null);
