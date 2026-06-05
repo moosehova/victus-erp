@@ -148,13 +148,10 @@ async function setDoc(type, btn, isEdit = false) {
                 const data = await response.json();
                 
                 if (data.success) {
-                    docNumInput.value = data.nextNumber;
-                } else {
-                    docNumInput.value = ''; // Fallback
+                    currentRefNumber = data.nextNumber; // Update global state
                 }
             } catch (error) {
                 console.error("Failed to auto-generate number:", error);
-                docNumInput.value = ''; // Fallback
             }
         }
     }
@@ -165,7 +162,10 @@ async function setDoc(type, btn, isEdit = false) {
 
     document.getElementById('pType').innerText = type.toUpperCase();
     document.getElementById('editTitle').innerText = type;
-    updateDocNumber();
+    
+    if (!isEdit) {
+        updateDocNumber(); // Format the new number using currentRefNumber
+    }
 
     // UI RESET: Handle visibility switching between Standard and Deal Recap
     const stdBuilder = document.getElementById('standard-builder');
