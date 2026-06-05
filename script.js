@@ -145,7 +145,7 @@ async function setDoc(type, btn, isEdit = false) {
             
             try {
                 // Ask the database for the next number for this specific document type
-                const response = await fetch(`/api/next-num?type=${encodeURIComponent(type)}`);
+                const response = await fetch(`/api/documents?action=next-num&type=${encodeURIComponent(type)}`);
                 const data = await response.json();
                 
                 if (data.success) {
@@ -404,7 +404,7 @@ async function saveToNeon() {
         const btn = document.querySelector('button[onclick="saveToNeon()"]');
         if (btn) btn.disabled = true;
 
-        const res = await fetch('/api/save-to-neon', {
+        const res = await fetch('/api/documents?action=save', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(docData)
@@ -629,7 +629,7 @@ function saveExpense() {
 
     if (!data.amount) return showNotification("Please enter an amount 🔴");
 
-    fetch('/api/save-expense', {
+    fetch('/api/expenses?action=save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
@@ -644,7 +644,7 @@ function saveExpense() {
 }
 
 function loadExpenses() {
-    fetch('/api/get-expenses')
+    fetch('/api/expenses?action=list')
         .then(res => res.json())
         .then(data => {
             const body = document.getElementById('expense-table-body');
@@ -666,7 +666,7 @@ function loadDashboard() {
     const tableBody = document.getElementById('dash-table-body');
     tableBody.innerHTML = '<tr><td colspan="6" class="text-center py-8 font-bold text-slate-500">Loading live data from Neon... ⏳</td></tr>';
 
-    fetch('/api/get-documents')
+    fetch('/api/documents?action=list')
         .then(res => res.json())
         .then(data => {
             if (data.success) {
@@ -868,7 +868,7 @@ function closeDeleteModal() {
 function confirmDelete() {
     if (!deletePendingId) return;
     showNotification('Deleting document...');
-    fetch('/api/delete-document', {
+    fetch('/api/documents?action=delete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: deletePendingId })
@@ -964,7 +964,7 @@ function toggleStatus(id, currentStatus) {
     if (currentStatus === 'PAID') nextStatus = 'DRAFT';
 
     showNotification(`Updating status to ${nextStatus}...`);
-    fetch('/api/update-status', {
+    fetch('/api/documents?action=update-status', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: id, newStatus: nextStatus })
@@ -983,7 +983,7 @@ function toggleStatus(id, currentStatus) {
 
 let clientDatabase = {};
 function loadClients() {
-    fetch('/api/get-clients')
+    fetch('/api/clients?action=list')
         .then(res => res.json())
         .then(data => {
             if (data.success) {
@@ -999,7 +999,7 @@ function loadClients() {
 
 let productDatabase = {};
 function loadProducts() {
-    fetch('/api/get-products')
+    fetch('/api/products?action=list')
         .then(res => res.json())
         .then(data => {
             if (data.success) {
@@ -1029,7 +1029,7 @@ function autoFillProduct() {
 function loadProductSettings() {
     const container = document.getElementById('settings-products-list');
     container.innerHTML = '<p class="text-xs text-slate-500 font-bold text-center py-4">Loading catalog...</p>';
-    fetch('/api/get-products')
+    fetch('/api/products?action=list')
         .then(res => res.json())
         .then(data => {
             if (data.success && data.data.length > 0) {
@@ -1062,7 +1062,7 @@ function saveProductPrice(name, index) {
         marking_fee: document.getElementById(`edit-marking-${index}`).value,
         srf: document.getElementById(`edit-srf-${index}`).value
     };
-    fetch('/api/update-product', {
+    fetch('/api/products?action=update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updatedData)
