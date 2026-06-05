@@ -414,8 +414,10 @@ async function saveToNeon() {
         if (btn) btn.disabled = false;
         if (res.ok && response.success) {
             showNotification("Document Archived to Neon 🟢");
-            currentRefNumber++;
-            updateDocNumber();
+            if (!document.getElementById('docNum').hasAttribute('data-editing')) {
+                currentRefNumber++;
+                updateDocNumber();
+            }
         } else {
             const message = response.error || response.message || res.statusText || 'Unknown Error';
             console.error('Archive failed:', message);
