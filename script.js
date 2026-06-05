@@ -148,6 +148,7 @@ function setDoc(type, btn) {
     // 3. GENERATE A NEW RANDOM REFERENCE NUMBER TO PREVENT OVERWRITES
     if (document.getElementById('docNum')) {
         document.getElementById('docNum').value = Math.floor(1000 + Math.random() * 9000);
+        document.getElementById('docNum').removeAttribute('data-editing'); // Clear editing flag for new documents
     }
 
     curDocType = type;
@@ -326,6 +327,31 @@ function applySettings() {
 // --- CLEAN NEON ARCHIVE ---
 async function saveToNeon() {
     showNotification("Syncing to Neon Database...");
+    
+    // 🚨 SAFETY CHECK: Prevent accidental overwrites of new documents
+    // If the reference number already exists in the dashboard AND we're not editing, STOP
+    const currentDocNum = document.getElementById('docNum').value;
+    const dashboardTable = document.getElementById('dashboardTableBody');
+    
+    // Count how many rows in the dashboard have this ref number
+    let existingCount = 0;
+    if (dashboardTable) {
+        const rows = dashboardTable.querySelectorAll('tr');
+        rows.forEach(row => {
+            const refCell = row.querySelector('td:first-child');
+            if (refCell && refCell.innerText.trim() === currentDocNum) {
+                existingCount++;
+            }
+        });
+    }
+    
+    // If this number exists AND we didn't just click Edit (no locked ref), block it
+    if (existingCount > 0 && !document.getElementById('docNum').hasAttribute('data-editing')) {
+        alert(`🚨 STOP! Document number ${currentDocNum} already exists in your database.\n\nThis is likely a NEW document with a duplicate number.\n\nPlease click "Generate New Number" or change the number to avoid overwriting your previous document!`);
+        showNotification("Save Cancelled - Duplicate Ref Number 🔴");
+        return;
+    }
+
     let itemsArray = [];
     let contractDetails = null;
 
@@ -733,6 +759,7 @@ function editDocument(encodedJson) {
     
     // 3. CRITICAL: Lock in the original Reference Number so it overwrites in the database
     document.getElementById('docNum').value = doc.ref_no;
+    document.getElementById('docNum').setAttribute('data-editing', 'true'); // Mark as being edited
     document.getElementById('pRef').innerText = "REF: " + doc.ref_no;
     
     // 4. Load the items
