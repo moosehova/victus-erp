@@ -1,16 +1,10 @@
 {
   "name": "victusenergy-app",
   "version": "1.0.0",
-  "description": "",
-  "main": "script.js",
   "type": "module",
   "scripts": {
-    "build": "npm install",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "echo 'Build successful'"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
     "@vercel/postgres": "^0.10.0",
