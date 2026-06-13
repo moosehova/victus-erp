@@ -1,12 +1,17 @@
 // --- AUTHENTICATION SYSTEM ---
 // Check auth status on load
 document.addEventListener('DOMContentLoaded', () => {
+    // PREVIEW-BYPASS: Auto-unlock when running as a static file on port 3000 (no Vercel API)
+    if (window.location.port === '3000' && !localStorage.getItem('erp_auth_token')) {
+        localStorage.setItem('erp_auth_token', 'static-preview');
+        window.location.reload();
+        return;
+    }
+
     const token = localStorage.getItem('erp_auth_token');
     if (token) {
         document.getElementById('login-view').classList.add('hidden');
         document.getElementById('main-app').classList.remove('hidden');
-        // Call your initialization functions here if needed:
-        // loadDashboard(); 
     }
 });
 
@@ -126,6 +131,10 @@ async function setDoc(type, btn, isEdit = false) {
         if (document.getElementById('clientTpin')) document.getElementById('clientTpin').value = '';
         if (document.getElementById('clientReg')) document.getElementById('clientReg').value = '';
         if (document.getElementById('delMethod')) document.getElementById('delMethod').value = '';
+        if (document.getElementById('poDeliveryTerms')) document.getElementById('poDeliveryTerms').value = '';
+        if (document.getElementById('poDeliveryDate')) document.getElementById('poDeliveryDate').value = '';
+        if (document.getElementById('poDeliverTo')) document.getElementById('poDeliverTo').value = '';
+        if (document.getElementById('poComments')) document.getElementById('poComments').value = '';
         
         // RESET ITEMS TO ONE BLANK ROW
         if (document.getElementById('itemList')) {
@@ -196,6 +205,25 @@ async function setDoc(type, btn, isEdit = false) {
         drSubtitle.classList.add('hidden');
         buyerSig.classList.add('hidden');
     }
+
+    // --- PURCHASE ORDER SPECIFIC UI TOGGLES ---
+    const isPO = (type === 'Local Purchase Order');
+    const partyLabel = document.getElementById('partyLabel');
+    const pPartyLabel = document.getElementById('pPartyLabel');
+    const poExtraFields = document.getElementById('po-extra-fields');
+    const poTermsBlock = document.getElementById('poDeliveryTermsBlock');
+    const poDateBlock = document.getElementById('poDeliveryDateBlock');
+    const poDeliverToBlock = document.getElementById('poDeliverToBlock');
+    const poCommentsBlock = document.getElementById('p-po-comments-block');
+
+    // Form label swaps
+    if (partyLabel) partyLabel.innerText = isPO ? 'Vendor / Supplier' : 'Client / Buyer';
+    if (pPartyLabel) pPartyLabel.innerText = isPO ? 'Vendor / Supplier' : 'Attention To';
+    if (poExtraFields) poExtraFields.classList.toggle('hidden', !isPO);
+    if (poTermsBlock) poTermsBlock.classList.toggle('hidden', !isPO);
+    if (poDateBlock) poDateBlock.classList.toggle('hidden', !isPO);
+    if (poDeliverToBlock) poDeliverToBlock.classList.toggle('hidden', !isPO);
+    if (poCommentsBlock) poCommentsBlock.classList.toggle('hidden', !isPO);
 
     if (window.innerWidth < 1024) {
         document.getElementById('sidebar').classList.remove('open');
@@ -454,6 +482,24 @@ function sync() {
     // Sync the delivery method input to the document
     if (document.getElementById('pMethod')) {
         document.getElementById('pMethod').innerText = document.getElementById('delMethod').value || '-';
+    }
+
+    // Sync PO-specific fields
+    const isPO = (curDocType === 'Local Purchase Order');
+    const poTermsEl = document.getElementById('poDeliveryTerms');
+    const poDateEl = document.getElementById('poDeliveryDate');
+    const poDeliverToEl = document.getElementById('poDeliverTo');
+    const poCommentsEl = document.getElementById('poComments');
+
+    if (isPO) {
+        if (document.getElementById('pPoDeliveryTerms') && poTermsEl)
+            document.getElementById('pPoDeliveryTerms').innerText = poTermsEl.value || '-';
+        if (document.getElementById('pPoDeliveryDate') && poDateEl)
+            document.getElementById('pPoDeliveryDate').innerText = poDateEl.value || '-';
+        if (document.getElementById('pPoDeliverTo') && poDeliverToEl)
+            document.getElementById('pPoDeliverTo').innerText = poDeliverToEl.value || '-';
+        if (document.getElementById('p-po-comments') && poCommentsEl)
+            document.getElementById('p-po-comments').innerText = poCommentsEl.value || '-';
     }
 
     // NEW: Sync Client TPIN and Reg No
