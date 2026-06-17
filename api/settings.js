@@ -29,6 +29,7 @@ export default async function handler(req, res) {
                     swift_code = ${data.swift_code || ''}, 
                     sort_code = ${data.sort_code || ''}, 
                     currency = ${data.currency || 'ZMW'},
+                    usd_rate = ${data.usd_rate || '27'},
                     signature = ${data.signature || null},
                     updated_at = NOW()
                 WHERE id = 1

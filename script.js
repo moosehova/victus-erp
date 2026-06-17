@@ -56,6 +56,7 @@ async function attemptLogin() {
 let currentRefNumber = 1100;
 let curDocType = 'Quotation';
 let taxRate = 0;
+let usdRate = 27; // ZMW per 1 USD — configurable in ERP Settings
 let globalSignature = null;
 let deletePendingId = null;
 
@@ -262,6 +263,7 @@ async function saveSettings() {
         swift_code: getValue('set-swift'),
         sort_code: getValue('set-sort'),
         currency: getValue('set-currency'),
+        usd_rate: getValue('set-usd-rate'),
         signature: globalSignature
     };
 
@@ -302,6 +304,12 @@ function applySettings() {
                 const config = data.data;
                 const savedTax = (config.tax_rate !== undefined && config.tax_rate !== null && config.tax_rate !== '') ? parseFloat(config.tax_rate) : 0;
                 taxRate = savedTax / 100;
+
+                // Load USD exchange rate
+                const savedUsdRate = (config.usd_rate !== undefined && config.usd_rate !== null && config.usd_rate !== '') ? parseFloat(config.usd_rate) : 27;
+                usdRate = savedUsdRate > 0 ? savedUsdRate : 27;
+                const usdRateInput = document.getElementById('set-usd-rate');
+                if (usdRateInput) usdRateInput.value = usdRate;
 
                 const setInput = (id, value) => {
                     const el = document.getElementById(id);
@@ -539,9 +547,13 @@ function sync() {
         });
 
         const vat = sub * taxRate;
+        const grandTotal = sub + vat;
         document.getElementById('pSub').innerText = "ZMW " + sub.toLocaleString(undefined, { minimumFractionDigits: 2 });
         document.getElementById('pVat').innerText = "ZMW " + vat.toLocaleString(undefined, { minimumFractionDigits: 2 });
-        document.getElementById('pTotal').innerText = (sub + vat).toLocaleString(undefined, { minimumFractionDigits: 2 });
+        document.getElementById('pTotal').innerText = grandTotal.toLocaleString(undefined, { minimumFractionDigits: 2 });
+        // USD equivalent
+        const usdEl = document.getElementById('pTotalUsd');
+        if (usdEl) usdEl.innerText = (grandTotal / usdRate).toLocaleString(undefined, { minimumFractionDigits: 2 });
     } else {
         const product = document.getElementById('dr-product').value || '_______';
         const qty = document.getElementById('dr-qty').value || '_______';
@@ -760,7 +772,7 @@ function renderDashboardTable(docs) {
                 <td class="py-4 px-6 text-slate-500 uppercase text-xs font-black tracking-wider">${doc.doc_type}</td>
                 <td class="py-4 px-6 font-medium text-slate-700">${doc.client_name}</td>
                 <td class="py-4 px-6">${statusBadge}</td>
-                <td class="py-4 px-6 text-right font-black text-blue-700">ZMW ${amt.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                <td class="py-4 px-6 text-right font-black text-blue-700">ZMW ${amt.toLocaleString(undefined, { minimumFractionDigits: 2 })}<br><span class="text-green-600 text-xs font-bold">$ ${(amt / usdRate).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span></td>
                 <td class="py-4 px-6 text-center flex justify-center gap-2">
                     <button onclick="viewDocument('${docJson}')" class="text-[10px] bg-slate-100 text-slate-700 px-3 py-1.5 rounded-lg font-bold hover:bg-slate-200 transition-colors uppercase tracking-wider border border-slate-200">Preview</button>
                     <button onclick="editDocument('${docJson}')" class="text-[10px] bg-blue-600 text-white px-3 py-1.5 rounded-lg font-bold hover:bg-blue-500 transition-colors uppercase tracking-wider">Edit</button>

@@ -15,10 +15,14 @@ CREATE TABLE IF NOT EXISTS erp_config (
     swift_code TEXT,
     sort_code TEXT,
     currency TEXT DEFAULT 'ZMW',
+    usd_rate TEXT DEFAULT '27',  -- ZMW per 1 USD exchange rate
     signature TEXT,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );
+
+-- Migration: add usd_rate column if it doesn't exist yet
+ALTER TABLE erp_config ADD COLUMN IF NOT EXISTS usd_rate TEXT DEFAULT '27';
 
 -- Documents Table (Invoices, Quotations, etc.)
 CREATE TABLE IF NOT EXISTS documents (
