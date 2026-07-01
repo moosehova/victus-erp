@@ -216,6 +216,7 @@ async function setDoc(type, btn, isEdit = false) {
     const poDateBlock = document.getElementById('poDeliveryDateBlock');
     const poDeliverToBlock = document.getElementById('poDeliverToBlock');
     const poCommentsBlock = document.getElementById('p-po-comments-block');
+    const proformaTermsBlock = document.getElementById('p-proforma-terms-block');
 
     // Form label swaps
     if (partyLabel) partyLabel.innerText = isPO ? 'Vendor / Supplier' : 'Client / Buyer';
@@ -225,6 +226,8 @@ async function setDoc(type, btn, isEdit = false) {
     if (poDateBlock) poDateBlock.classList.toggle('hidden', !isPO);
     if (poDeliverToBlock) poDeliverToBlock.classList.toggle('hidden', !isPO);
     if (poCommentsBlock) poCommentsBlock.classList.toggle('hidden', !isPO);
+    
+    if (proformaTermsBlock) proformaTermsBlock.classList.toggle('hidden', type !== 'Proforma Invoice');
 
     if (window.innerWidth < 1024) {
         document.getElementById('sidebar').classList.remove('open');
@@ -483,6 +486,7 @@ function addRow() {
 function sync() {
     const clientName = document.getElementById('clientName').value || 'Client Name';
     document.getElementById('pName').innerText = clientName;
+    if(document.getElementById('p-pf-client-ack')) document.getElementById('p-pf-client-ack').innerText = clientName;
     document.getElementById('pAddr').innerText = document.getElementById('address').value;
     document.getElementById('pDate').innerText = document.getElementById('docDate').value || new Date().toLocaleDateString('en-ZM');
     document.getElementById('pSales').innerText = document.getElementById('salesRep').value;
@@ -543,17 +547,30 @@ function sync() {
             const p = parseFloat(r.querySelector('.i-price').value) || 0;
             const total = q * p;
             sub += total;
-            if (d) tableBody.innerHTML += `<tr><td class="py-4 px-6 uppercase">${d}</td><td class="text-center font-bold text-slate-600">${q}</td><td class="text-right">ZMW ${p.toLocaleString()}</td><td class="text-right font-black">ZMW ${total.toLocaleString()}</td></tr>`;
+            if (d) tableBody.innerHTML += `<tr><td class="py-4 px-6 uppercase">${d}</td><td class="text-center font-bold text-slate-600">${q}</td><td class="text-right">${p.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td><td class="text-right font-black">${total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td></tr>`;
         });
 
         const vat = sub * taxRate;
         const grandTotal = sub + vat;
-        document.getElementById('pSub').innerText = "ZMW " + sub.toLocaleString(undefined, { minimumFractionDigits: 2 });
-        document.getElementById('pVat').innerText = "ZMW " + vat.toLocaleString(undefined, { minimumFractionDigits: 2 });
+        
+        const docCurrency = document.getElementById('docCurrency') ? document.getElementById('docCurrency').value : 'ZMW';
+        const currencyPrefix = docCurrency === 'USD' ? '$' : 'ZMW';
+        
+        document.querySelectorAll('.currency-label').forEach(el => el.innerText = docCurrency);
+
+        document.getElementById('pSub').innerText = currencyPrefix + " " + sub.toLocaleString(undefined, { minimumFractionDigits: 2 });
+        document.getElementById('pVat').innerText = currencyPrefix + " " + vat.toLocaleString(undefined, { minimumFractionDigits: 2 });
         document.getElementById('pTotal').innerText = grandTotal.toLocaleString(undefined, { minimumFractionDigits: 2 });
-        // USD equivalent
+        
         const usdEl = document.getElementById('pTotalUsd');
-        if (usdEl) usdEl.innerText = (grandTotal / usdRate).toLocaleString(undefined, { minimumFractionDigits: 2 });
+        const usdBlock = document.getElementById('pTotalUsdBlock');
+        
+        if (docCurrency === 'ZMW') {
+            if (usdBlock) usdBlock.classList.remove('hidden');
+            if (usdEl) usdEl.innerText = (grandTotal / usdRate).toLocaleString(undefined, { minimumFractionDigits: 2 });
+        } else {
+            if (usdBlock) usdBlock.classList.add('hidden');
+        }
     } else {
         const product = document.getElementById('dr-product').value || '_______';
         const qty = document.getElementById('dr-qty').value || '_______';

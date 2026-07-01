@@ -105,6 +105,12 @@
                             class="input-box bg-slate-100 font-bold" readonly></div>
                     <div><label class="label">Date</label><input type="date" id="docDate" oninput="sync()"
                             class="input-box"></div>
+                    <div><label class="label">Currency</label>
+                        <select id="docCurrency" oninput="sync()" class="input-box">
+                            <option value="ZMW" selected>Kwacha (ZMW)</option>
+                            <option value="USD">Dollar (USD)</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div class="mb-6">
@@ -442,8 +448,8 @@
                                     <tr>
                                         <th class="py-5 px-6 text-left">Description</th>
                                         <th class="py-4 px-6 text-center">Qty</th>
-                                        <th class="py-4 px-6 text-right">Price</th>
-                                        <th class="py-4 px-6 text-right">Total</th>
+                                        <th class="py-4 px-6 text-right">Price (<span class="currency-label">ZMW</span>)</th>
+                                        <th class="py-4 px-6 text-right">Total (<span class="currency-label">ZMW</span>)</th>
                                     </tr>
                                 </thead>
                                 <tbody id="pTable" class="divide-y divide-slate-100 font-semibold text-slate-800">
@@ -467,8 +473,32 @@
                                     <div class="flex justify-between text-xl font-black text-blue-700 pt-6 border-t-2 items-center">
                                         <span>TOTAL</span>
                                         <div class="text-right leading-tight">
-                                            <div>ZMW <span id="pTotal">0.00</span></div>
-                                            <div class="text-sm font-bold text-green-600 mt-0.5">$ <span id="pTotalUsd">0.00</span></div>
+                                            <div><span class="currency-label">ZMW</span> <span id="pTotal">0.00</span></div>
+                                            <div id="pTotalUsdBlock" class="text-sm font-bold text-green-600 mt-0.5">$ <span id="pTotalUsd">0.00</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- PROFORMA INVOICE TERMS & CONDITIONS -->
+                            <div id="p-proforma-terms-block" class="hidden mt-8">
+                                <div class="bg-slate-900 text-white font-bold text-xs uppercase px-2 py-1 mb-2">Terms & Conditions</div>
+                                <ol class="text-[10px] text-slate-800 space-y-1 list-none pl-1">
+                                    <li>1) The price quoted above is Wholesale price to OMC (in line with the latest ERB price build-up) and does not contain any ERB fees or charges including SRF, License Fee.</li>
+                                    <li>2) The customer has to clear the product themselves by paying duties, levies, fees and taxes that are applicable.</li>
+                                    <li>3) The price quoted is inclusive of the Price Stabilisation Fee as per the ERB's Wholesale Price Build-up applicable for the month</li>
+                                    <li>4) Payment terms: Pre-payment to the bank account mentioned in this PFI. Product release will be issued only upon confirmation of receipt of funds from the customer.</li>
+                                    <li>5) Validity of this Proforma Invoice as per the date given above</li>
+                                    <li>6) The product availability is on 'First Come First Serve' basis and issuance of a proforma invoice does not guarantee release of product.</li>
+                                </ol>
+                                
+                                <div class="mt-8 border border-slate-900">
+                                    <div class="bg-slate-900 text-white font-bold text-xs uppercase px-2 py-1 text-center">Acknowledgement & Acceptance of the Customer</div>
+                                    <div class="p-3 text-[10px] text-slate-800">
+                                        <p>For and on behalf of M/s. <span id="p-pf-client-ack" class="font-bold"></span> I accept the commercial terms & conditions including the product description, price etc of this proforma Invoice</p>
+                                        <div class="flex justify-between mt-8">
+                                            <div>Name of the signatory:<br><br>Date:</div>
+                                            <div class="border-t border-slate-900 pt-1 w-48 text-center mt-6">Signature & Stamp</div>
                                         </div>
                                     </div>
                                 </div>
