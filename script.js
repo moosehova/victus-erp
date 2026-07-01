@@ -228,6 +228,8 @@ async function setDoc(type, btn, isEdit = false) {
     if (poCommentsBlock) poCommentsBlock.classList.toggle('hidden', !isPO);
     
     if (proformaTermsBlock) proformaTermsBlock.classList.toggle('hidden', type !== 'Proforma Invoice');
+    const proformaFields = document.getElementById('proforma-fields');
+    if (proformaFields) proformaFields.classList.toggle('hidden', type !== 'Proforma Invoice');
 
     if (window.innerWidth < 1024) {
         document.getElementById('sidebar').classList.remove('open');
@@ -418,6 +420,13 @@ async function saveToNeon() {
                 price: row.querySelector('.i-price').value
             });
         });
+        
+        if (curDocType === 'Proforma Invoice') {
+            contractDetails = {};
+            contractDetails['proforma_terms'] = document.getElementById('proforma-terms') ? document.getElementById('proforma-terms').value : '';
+            const sigImg = document.getElementById('p-pf-client-sig-img');
+            contractDetails['client_sig'] = sigImg && !sigImg.classList.contains('hidden') ? sigImg.src : '';
+        }
     }
 
     // Clean total amount: Remove 'ZMW' and commas for DB numeric safety
@@ -577,6 +586,24 @@ function sync() {
             document.getElementById(`p-dr-${field}`).innerText = val ? val : '-';
         });
         document.getElementById('p-dr-buyer').innerText = clientName;
+    }
+
+    if (curDocType === 'Proforma Invoice') {
+        const pterms = document.getElementById('proforma-terms').value.trim();
+        document.getElementById('p-pf-terms-text').innerText = pterms ? pterms : "";
+        if (document.getElementById('p-pf-terms-header')) {
+            document.getElementById('p-pf-terms-header').classList.toggle('hidden', !pterms);
+        }
+
+        const clientSig = document.getElementById('p-pf-client-sig-img');
+        const hasSig = clientSig && !clientSig.classList.contains('hidden') && clientSig.src;
+        if (document.getElementById('p-pf-ack-block')) {
+            document.getElementById('p-pf-ack-block').classList.toggle('hidden', !hasSig);
+        }
+
+        if (document.getElementById('authByBlock')) document.getElementById('authByBlock').classList.remove('hidden');
+    } else {
+        if (document.getElementById('authByBlock')) document.getElementById('authByBlock').classList.remove('hidden');
     }
 }
 
@@ -827,6 +854,15 @@ function cloneDoc(encodedJson) {
             const el = document.getElementById(`dr-${key}`);
             if (el) el.value = doc.contract_details[key];
         });
+    } else if (doc.doc_type === 'Proforma Invoice' && doc.contract_details) {
+        if (document.getElementById('proforma-terms')) document.getElementById('proforma-terms').value = doc.contract_details['proforma_terms'] || '';
+        const sigImg = document.getElementById('p-pf-client-sig-img');
+        if (sigImg && doc.contract_details['client_sig']) {
+            sigImg.src = doc.contract_details['client_sig'];
+            sigImg.classList.remove('hidden');
+        } else if (sigImg) {
+            sigImg.classList.add('hidden');
+        }
     }
 
     document.getElementById('docDate').value = new Date().toISOString().split('T')[0];
@@ -866,12 +902,21 @@ function editDocument(encodedJson) {
         });
     }
 
-    // 5. Load Contract Details if it's a Deal Recap
+    // 5. Load Contract Details if it's a Deal Recap or Proforma Invoice
     if(doc.doc_type === 'Deal Recap' && doc.contract_details) {
         Object.keys(doc.contract_details).forEach(key => {
             const el = document.getElementById(`dr-${key}`);
             if(el) el.value = doc.contract_details[key];
         });
+    } else if (doc.doc_type === 'Proforma Invoice' && doc.contract_details) {
+        if (document.getElementById('proforma-terms')) document.getElementById('proforma-terms').value = doc.contract_details['proforma_terms'] || '';
+        const sigImg = document.getElementById('p-pf-client-sig-img');
+        if (sigImg && doc.contract_details['client_sig']) {
+            sigImg.src = doc.contract_details['client_sig'];
+            sigImg.classList.remove('hidden');
+        } else if (sigImg) {
+            sigImg.classList.add('hidden');
+        }
     }
 
     sync();
@@ -902,6 +947,17 @@ function viewDocument(encodedJson) {
             });
         } else {
             addRow();
+        }
+
+        if (doc.doc_type === 'Proforma Invoice' && doc.contract_details) {
+            if (document.getElementById('proforma-terms')) document.getElementById('proforma-terms').value = doc.contract_details['proforma_terms'] || '';
+            const sigImg = document.getElementById('p-pf-client-sig-img');
+            if (sigImg && doc.contract_details['client_sig']) {
+                sigImg.src = doc.contract_details['client_sig'];
+                sigImg.classList.remove('hidden');
+            } else if (sigImg) {
+                sigImg.classList.add('hidden');
+            }
         }
     }
 
@@ -1174,5 +1230,18 @@ window.onload = () => {
     const dashBtn = document.querySelector('button[onclick*="dashboard"]');
     switchView('dashboard', dashBtn);
 };
+
+// NEW: Handle Client Signature
+function handleClientSignature(event) {
+    const reader = new FileReader();
+    const sigImg = document.getElementById('p-pf-client-sig-img');
+    reader.onload = function () {
+        sigImg.src = reader.result;
+        sigImg.classList.remove('hidden');
+        showNotification("Client Signature Uploaded");
+        sync();
+    };
+    if (event.target.files[0]) reader.readAsDataURL(event.target.files[0]);
+}
 
 window.onresize = adjustMobileScale;
