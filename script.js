@@ -565,12 +565,8 @@ function sync() {
         const usdEl = document.getElementById('pTotalUsd');
         const usdBlock = document.getElementById('pTotalUsdBlock');
         
-        if (docCurrency === 'ZMW') {
-            if (usdBlock) usdBlock.classList.remove('hidden');
-            if (usdEl) usdEl.innerText = (grandTotal / usdRate).toLocaleString(undefined, { minimumFractionDigits: 2 });
-        } else {
-            if (usdBlock) usdBlock.classList.add('hidden');
-        }
+        // Hide the secondary USD block entirely to only show the selected currency
+        if (usdBlock) usdBlock.classList.add('hidden');
     } else {
         const product = document.getElementById('dr-product').value || '_______';
         const qty = document.getElementById('dr-qty').value || '_______';
@@ -789,7 +785,7 @@ function renderDashboardTable(docs) {
                 <td class="py-4 px-6 text-slate-500 uppercase text-xs font-black tracking-wider">${doc.doc_type}</td>
                 <td class="py-4 px-6 font-medium text-slate-700">${doc.client_name}</td>
                 <td class="py-4 px-6">${statusBadge}</td>
-                <td class="py-4 px-6 text-right font-black text-blue-700">ZMW ${amt.toLocaleString(undefined, { minimumFractionDigits: 2 })}<br><span class="text-green-600 text-xs font-bold">$ ${(amt / usdRate).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span></td>
+                <td class="py-4 px-6 text-right font-black text-blue-700">${doc.currency || 'ZMW'} ${amt.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                 <td class="py-4 px-6 text-center flex justify-center gap-2">
                     <button onclick="viewDocument('${docJson}')" class="text-[10px] bg-slate-100 text-slate-700 px-3 py-1.5 rounded-lg font-bold hover:bg-slate-200 transition-colors uppercase tracking-wider border border-slate-200">Preview</button>
                     <button onclick="editDocument('${docJson}')" class="text-[10px] bg-blue-600 text-white px-3 py-1.5 rounded-lg font-bold hover:bg-blue-500 transition-colors uppercase tracking-wider">Edit</button>
@@ -812,6 +808,7 @@ function cloneDoc(encodedJson) {
 
     document.getElementById('clientName').value = doc.client_name;
     document.getElementById('address').value = doc.address;
+    if (document.getElementById('docCurrency')) document.getElementById('docCurrency').value = doc.currency || 'ZMW';
     document.getElementById('itemList').innerHTML = '';
 
     if (doc.items && Array.isArray(doc.items)) {
@@ -849,6 +846,7 @@ function editDocument(encodedJson) {
     document.getElementById('clientName').value = doc.client_name || '';
     document.getElementById('address').value = doc.address || '';
     document.getElementById('salesRep').value = doc.representative || '';
+    if (document.getElementById('docCurrency')) document.getElementById('docCurrency').value = doc.currency || 'ZMW';
     
     // 3. CRITICAL: Lock in the original Reference Number so it overwrites in the database
     document.getElementById('docNum').value = doc.ref_no;
@@ -912,6 +910,7 @@ function viewDocument(encodedJson) {
     if (document.getElementById('clientReg')) document.getElementById('clientReg').value = doc.client_reg_no || '';
     document.getElementById('address').value = doc.address || '';
     document.getElementById('salesRep').value = doc.representative || '';
+    if (document.getElementById('docCurrency')) document.getElementById('docCurrency').value = doc.currency || 'ZMW';
     document.getElementById('pRef').innerText = "REF: " + doc.ref_no;
 
     document.getElementById('docDate').value = doc.created_at ? new Date(doc.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];

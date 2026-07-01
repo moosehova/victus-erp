@@ -59,6 +59,7 @@ export default async function handler(req, res) {
                             items = ${JSON.stringify(data.items)},
                             total_amount = ${data.total_amount},
                             contract_details = ${JSON.stringify(data.contract_details)},
+                            currency = ${data.currency || 'ZMW'},
                             updated_at = NOW()
                         WHERE ref_no = ${data.ref_no} AND doc_type = ${data.doc_type}
                         RETURNING id
@@ -66,10 +67,10 @@ export default async function handler(req, res) {
                 } else {
                     result = await sql`
                         INSERT INTO documents (
-                            ref_no, doc_type, client_name, client_tpin, client_reg_no, address, representative, items, total_amount, contract_details, status, created_at, updated_at
+                            ref_no, doc_type, client_name, client_tpin, client_reg_no, address, representative, items, total_amount, contract_details, currency, status, created_at, updated_at
                         )
                         VALUES (
-                            ${data.ref_no}, ${data.doc_type}, ${data.client_name}, ${data.client_tpin || null}, ${data.client_reg_no || null}, ${data.address}, ${data.representative}, ${JSON.stringify(data.items)}, ${data.total_amount}, ${JSON.stringify(data.contract_details)}, 'DRAFT', NOW(), NOW()
+                            ${data.ref_no}, ${data.doc_type}, ${data.client_name}, ${data.client_tpin || null}, ${data.client_reg_no || null}, ${data.address}, ${data.representative}, ${JSON.stringify(data.items)}, ${data.total_amount}, ${JSON.stringify(data.contract_details)}, ${data.currency || 'ZMW'}, 'DRAFT', NOW(), NOW()
                         )
                         RETURNING id
                     `;
