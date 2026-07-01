@@ -153,8 +153,13 @@
                                 placeholder="Enter any special instructions or notes..."></textarea></div>
                     </div>
 
+                    <div id="itemList" class="space-y-4"></div>
+                    <button onclick="addRow()"
+                        class="mt-6 mb-8 w-full py-3 border-2 border-blue-600 text-blue-600 font-black rounded-xl text-[10px] tracking-widest uppercase">+
+                        Add Product</button>
+
                     <!-- Proforma Specific Fields -->
-                    <div id="proforma-fields" class="hidden mb-6">
+                    <div id="proforma-fields" class="hidden mb-6 border-t pt-6">
                         <label class="label text-blue-700">Proforma Terms & Conditions</label>
                         <textarea id="proforma-terms" oninput="sync()" class="input-box h-32"
                             placeholder="Type terms and conditions here..."></textarea>
@@ -164,11 +169,6 @@
                             <input type="file" id="pfClientSig" onchange="handleClientSignature(event)" accept="image/*" class="input-box p-1 text-xs">
                         </div>
                     </div>
-
-                    <div id="itemList" class="space-y-4"></div>
-                    <button onclick="addRow()"
-                        class="mt-6 w-full py-3 border-2 border-blue-600 text-blue-600 font-black rounded-xl text-[10px] tracking-widest uppercase">+
-                        Add Product</button>
                 </div>
 
                 <div id="recap-builder" class="hidden space-y-4">
@@ -498,16 +498,12 @@
                                 <div id="p-pf-terms-text" class="text-[10px] text-slate-800 whitespace-pre-line pl-1 mb-8">
                                 </div>
                                 
-                                <div id="p-pf-ack-block" class="mt-8 border border-slate-900">
-                                    <div class="bg-slate-900 text-white font-bold text-xs uppercase px-2 py-1 text-center">Acknowledgement & Acceptance of the Customer</div>
-                                    <div class="p-3 text-[10px] text-slate-800">
-                                        <p>For and on behalf of M/s. <span id="p-pf-client-ack" class="font-bold"></span> I accept the commercial terms & conditions including the product description, price etc of this proforma Invoice</p>
-                                        <div class="flex justify-between mt-8 mb-4">
-                                            <div>Name of the signatory:<br><br>Date:</div>
-                                            <div class="border-t border-slate-900 pt-1 w-48 text-center mt-6 relative">
-                                                <img id="p-pf-client-sig-img" src="" class="hidden h-12 w-auto absolute bottom-4 left-1/2 -translate-x-1/2 mix-blend-multiply">
-                                                Signature & Stamp
-                                            </div>
+                                <div id="p-pf-ack-block" class="mt-12">
+                                    <div class="flex justify-between mt-8 mb-4">
+                                        <div class="text-[10px] font-bold text-slate-800">Client Signature:</div>
+                                        <div class="border-t border-slate-900 pt-1 w-48 text-center mt-6 relative text-[10px] text-slate-800">
+                                            <img id="p-pf-client-sig-img" src="" class="hidden h-12 w-auto absolute bottom-4 left-1/2 -translate-x-1/2 mix-blend-multiply">
+                                            Signature & Stamp
                                         </div>
                                     </div>
                                 </div>
