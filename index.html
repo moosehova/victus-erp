@@ -165,7 +165,7 @@
                             placeholder="Type terms and conditions here..."></textarea>
                         
                         <div class="mt-4">
-                            <label class="label">Approved By Signature (Optional)</label>
+                            <label class="label">Prepared By Signature (Optional)</label>
                             <input type="file" id="pfClientSig" onchange="handleClientSignature(event)" accept="image/*" class="input-box p-1 text-xs">
                         </div>
                     </div>
@@ -500,11 +500,12 @@
                                 
                                 <div id="p-pf-ack-block" class="mt-12">
                                     <div class="flex justify-between mt-8 mb-4">
-                                        <div class="border-t border-slate-900 pt-1 w-48 text-center mt-6 text-[10px] text-slate-800 font-bold">
+                                        <div class="border-t border-slate-900 pt-1 w-48 text-center mt-6 relative text-[10px] text-slate-800 font-bold">
+                                            <img id="p-pf-client-sig-img" src="" class="hidden h-12 w-auto absolute bottom-4 left-1/2 -translate-x-1/2 mix-blend-multiply">
                                             Prepared By
                                         </div>
                                         <div class="border-t border-slate-900 pt-1 w-48 text-center mt-6 relative text-[10px] text-slate-800 font-bold">
-                                            <img id="p-pf-client-sig-img" src="" class="hidden h-12 w-auto absolute bottom-4 left-1/2 -translate-x-1/2 mix-blend-multiply">
+                                            <img id="pSignature" src="" class="hidden h-12 w-auto absolute bottom-4 left-1/2 -translate-x-1/2 mix-blend-multiply" style="filter: contrast(1.2);">
                                             Approved By
                                         </div>
                                     </div>
@@ -613,15 +614,7 @@
                                         class="w-full border-t-2 border-slate-900 pt-2 text-[10px] font-black uppercase text-slate-700">
                                         Buyer Sign & Stamp</div>
                                 </div>
-                                <div class="text-center w-32 flex flex-col items-center">
-                                    <div class="h-16 flex items-center justify-center mb-2">
-                                        <img id="pSignature" src="" class="max-h-full hidden object-contain"
-                                            style="mix-blend-mode: multiply; filter: contrast(1.2);">
-                                    </div>
-                                    <div
-                                        class="w-full border-t-2 border-slate-900 pt-2 text-[10px] font-black uppercase text-slate-700">
-                                        Victus Signatory</div>
-                                </div>
+
                             </div>
                         </div>
                     </div>
