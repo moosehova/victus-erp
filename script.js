@@ -1238,7 +1238,7 @@ function handleClientSignature(event) {
     reader.onload = function () {
         sigImg.src = reader.result;
         sigImg.classList.remove('hidden');
-        showNotification("Client Signature Uploaded");
+        showNotification("Approved By Signature Uploaded");
         sync();
     };
     if (event.target.files[0]) reader.readAsDataURL(event.target.files[0]);
